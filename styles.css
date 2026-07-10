@@ -227,7 +227,7 @@ h1 {
 
 .overview-hero::before,
 .overview-hero::after {
-  content: "";
+  content: none;
   position: absolute;
   pointer-events: none;
   opacity: 0.22;
