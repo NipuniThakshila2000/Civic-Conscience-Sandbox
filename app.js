@@ -643,6 +643,17 @@ function renderSandbox(data) {
   const rehearsal = rehearsalPreview(data);
   return `
     <section class="view active">
+      <div class="panel sandbox-guide-panel" style="margin-bottom:18px">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Sandbox workflow</h2>
+            <p class="panel-subtitle">Use this sequence to move from a proposed intervention to profile effects and narrative rehearsal.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          ${renderSandboxGuide()}
+        </div>
+      </div>
       <div class="grid two">
         <div class="panel intervention-card">
           <div class="panel-header">
@@ -759,6 +770,33 @@ function renderSandbox(data) {
         </div>
       </div>
     </section>
+  `;
+}
+
+function renderSandboxGuide() {
+  const steps = [
+    ["1", "Write", "Type the intervention in plain language, or load one of the prepared sample texts."],
+    ["2", "Review warning", "Read the category, focus dimension, and risk pattern before changing the active simulation."],
+    ["3", "Simulate", "Press Simulate to apply the categorized intervention to all ECC profiles."],
+    ["4", "Read effects", "Use the preview table to compare Overlap, Tension, Translation, and dimension triggers."],
+    ["5", "Rehearse", "Draft public language, run preview, and use the suggestion panel to reduce avoidable tension."],
+    ["6", "Compare", "Open the Scenario Comparison Log and save the current scenario when it is worth retaining."]
+  ];
+  return `
+    <div class="sandbox-steps">
+      ${steps
+        .map(
+          ([number, title, text], index) => `
+            <div class="sandbox-step">
+              <div class="sandbox-step-number">${number}</div>
+              <strong>${title}</strong>
+              <span>${text}</span>
+            </div>
+            ${index < steps.length - 1 ? `<div class="sandbox-step-arrow" aria-hidden="true">→</div>` : ""}
+          `
+        )
+        .join("")}
+    </div>
   `;
 }
 
