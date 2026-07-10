@@ -443,7 +443,16 @@ function renderOverview(data) {
           <h2>A pluralistic civic conscience, modeled through interaction</h2>
           <p>Every community carries distinct civic language for justice, trust, dignity, process, authority, and honour. This view reads those profiles as a living relationship field.</p>
         </div>
-        <div class="overview-risk-single">
+        <div class="overview-hero-grid">
+          <div class="graph-panel">
+            <div class="graph-title-row">
+              <div>
+                <h3>ECC Interaction Field</h3>
+                <p>Profile nodes pulse with pairwise interaction strength from local fixture data.</p>
+              </div>
+            </div>
+            ${renderNodeGraph(data)}
+          </div>
           <div class="risk-panel">
             <h3>Fragmentation Risk</h3>
             ${renderFragmentationMeter(data, aggregate)}
