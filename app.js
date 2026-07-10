@@ -123,16 +123,16 @@ function arcPath(cx, cy, radius, startAngle, endAngle) {
 
 function nodeLayout(data) {
   const positions = [
-    [34, 26],
-    [208, 24],
-    [382, 26],
-    [34, 156],
-    [382, 156],
-    [34, 286],
-    [208, 288],
-    [382, 286],
-    [122, 418],
-    [294, 418]
+    [44, 28],
+    [304, 28],
+    [564, 28],
+    [44, 206],
+    [564, 206],
+    [44, 384],
+    [304, 384],
+    [564, 384],
+    [174, 562],
+    [434, 562]
   ];
   return new Map(
     data.ecc_profiles.map((profile, index) => [
@@ -141,8 +141,8 @@ function nodeLayout(data) {
         ...profile,
         x: positions[index]?.[0] || 240,
         y: positions[index]?.[1] || 180,
-        width: 124 + profile.population_share * 150,
-        height: 90 + profile.population_share * 72,
+        width: 196,
+        height: 110,
         color: cohortPalette[profile.ecc_id] || "#9fb0c2"
       }
     ])
@@ -163,14 +163,14 @@ function notablePattern(profile) {
 function renderNodeGraph(data) {
   const nodes = nodeLayout(data);
   const edges = graphEdges(data);
-  const center = { x: 206, y: 232, width: 258, height: 64 };
+  const center = { x: 276, y: 272, width: 276, height: 70 };
   const anchor = (node) => ({
     x: node.x + node.width / 2,
     y: node.y + node.height / 2
   });
   return `
     <div class="node-graph-wrap">
-      <svg class="node-graph" viewBox="0 0 600 548" role="img" aria-label="ECC profile interaction graph">
+      <svg class="node-graph" viewBox="0 0 804 704" role="img" aria-label="ECC profile interaction graph">
         <defs>
           <marker id="lineDot" markerWidth="4" markerHeight="4" refX="2" refY="2">
             <circle cx="2" cy="2" r="1.6" fill="#1f2329" />
@@ -211,8 +211,8 @@ function renderNodeGraph(data) {
           .map(
             (node, index) => {
               const metrics = node.current_relationships;
-              const tooltipX = node.x > 330 ? node.x - 24 : node.x + 34;
-              const tooltipY = node.y > 320 ? node.y - 112 : node.y + 46;
+              const tooltipX = node.x > 500 ? node.x - 4 : node.x + 40;
+              const tooltipY = node.y > 480 ? node.y - 110 : node.y + 58;
               const cardTitle = node.label.replace("Economically Insecure ", "Econ. Insecure ").replace("Reciprocity-Sensitive ", "Reciprocity ").replace("Marginalized ", "Marg. ");
               return `
               <g class="graph-node" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
