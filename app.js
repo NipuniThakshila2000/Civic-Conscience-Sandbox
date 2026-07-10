@@ -10,7 +10,9 @@ const state = {
   draft:
     "This adjustment is a necessary fiscal correction. The ministry has decided the change will apply equally to everyone through established protocol.",
   rehearsalLog: [],
-  scenarioLog: []
+  scenarioLog: [],
+  tourActive: false,
+  tourStep: 0
 };
 
 const dimensionLabels = {
@@ -69,6 +71,45 @@ const interventionKeywords = {
   int_09: ["prices", "economic contraction", "downturn", "income", "inflation", "shock"],
   int_10: ["misuse", "blame", "caused the problem", "irresponsible", "fault", "shortfall announcement"]
 };
+
+const tourSteps = [
+  {
+    view: "overview",
+    title: "Start with the relationship map",
+    text: "Read the Overview, hover an ECC card in the interaction field, and note which profiles carry more tension or translation pressure.",
+    action: "Hover an ECC card to open its light box."
+  },
+  {
+    view: "explorer",
+    title: "Inspect an ECC profile",
+    text: "Select a stakeholder group and read its six-dimension legibility profile. Low, Medium, and High describe clarity, not moral rank.",
+    action: "Choose a profile from the left register."
+  },
+  {
+    view: "sandbox",
+    title: "Type an intervention",
+    text: "Enter a proposed policy, message, leadership change, shock, or narrative. The warning panel categorizes it before simulation.",
+    action: "Press Simulate after the category warning looks right."
+  },
+  {
+    view: "sandbox",
+    title: "Rehearse the narrative",
+    text: "Draft the public language and run the rehearsal. The suggestion panel flags dignity, trust, honour, process, authority, or justice risks.",
+    action: "Run preview, revise, then run again."
+  },
+  {
+    view: "dashboard",
+    title: "Read the CCC gap",
+    text: "Use the CCC Dashboard to compare overlap, tension, translation, fragmentation risk, and the ECC interaction field in one place.",
+    action: "Check whether the gap narrows or widens."
+  },
+  {
+    view: "log",
+    title: "Save and compare scenarios",
+    text: "Save the current scenario so it appears in the comparison log alongside baseline and prior entries.",
+    action: "Use Save current scenario when you want to keep a run."
+  }
+];
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
 const pct = (value) => `${Math.round(value * 100)}%`;
@@ -459,17 +500,6 @@ function renderOverview(data) {
           </div>
         </div>
       </div>
-      <div class="panel howto-panel" style="margin-bottom:18px">
-        <div class="panel-header">
-          <div>
-            <h2 class="panel-title">How to use</h2>
-            <p class="panel-subtitle">Follow the civic relationship workflow from profile reading to scenario comparison.</p>
-          </div>
-        </div>
-        <div class="panel-body">
-          ${renderHowToFlow()}
-        </div>
-      </div>
       <div class="grid three">
         ${renderMetric("Overlap condition", aggregate.overlap, `Ideal reference ${pct(data.ideal_condition.overlap_target)}`)}
         ${renderMetric("Tension condition", aggregate.tension, `Maximum reference ${pct(data.ideal_condition.tension_target_max)}`, "tension")}
@@ -514,32 +544,6 @@ function renderOverview(data) {
         </div>
       </div>
     </section>
-  `;
-}
-
-function renderHowToFlow() {
-  const steps = [
-    ["1", "Read ECC profiles", "Inspect stakeholder language across Justice, Process, Dignity, Dishonour, Authority, and Trust."],
-    ["2", "Check interaction field", "Use the node diagram to see how profile relationships are connected or tense."],
-    ["3", "Type intervention", "Enter a proposed action in the Sandbox and review its category warning."],
-    ["4", "Simulate effects", "Press Simulate to update profile-level Overlap, Tension, and Translation effects."],
-    ["5", "Compare CCC gap", "Review dashboard gaps and save scenario entries for comparison."]
-  ];
-  return `
-    <div class="howto-flow">
-      ${steps
-        .map(
-          ([number, title, text], index) => `
-            <div class="howto-step">
-              <div class="step-number">${number}</div>
-              <strong>${title}</strong>
-              <span>${text}</span>
-            </div>
-            ${index < steps.length - 1 ? `<div class="step-arrow" aria-hidden="true">→</div>` : ""}
-          `
-        )
-        .join("")}
-    </div>
   `;
 }
 
@@ -924,6 +928,26 @@ function renderLog(data) {
   `;
 }
 
+function renderTourOverlay() {
+  if (!state.tourActive) return "";
+  const step = tourSteps[state.tourStep];
+  return `
+    <div class="tour-scrim">
+      <section class="tour-card" aria-live="polite">
+        <div class="tour-count">Step ${state.tourStep + 1} of ${tourSteps.length}</div>
+        <h2>${step.title}</h2>
+        <p>${step.text}</p>
+        <div class="tour-action">${step.action}</div>
+        <div class="tour-controls">
+          <button class="secondary-action" data-action="tourBack" ${state.tourStep === 0 ? "disabled" : ""}>Back</button>
+          <button class="secondary-action" data-action="tourStop">Finish</button>
+          <button class="primary-action" data-action="tourNext">${state.tourStep === tourSteps.length - 1 ? "Finish" : "Next"}</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 function renderShell(data) {
   const views = [
     ["overview", "Overview"],
@@ -957,8 +981,10 @@ function renderShell(data) {
       </header>
       <nav class="nav" aria-label="Primary">
         ${views.map(([id, label]) => `<button class="${state.view === id ? "active" : ""}" data-action="view" data-id="${id}">${label}</button>`).join("")}
+        <button class="tour-start ${state.tourActive ? "active" : ""}" data-action="tourStart">Take guided round</button>
       </nav>
-      <main class="main">${viewHtml}</main>
+      <main class="main ${state.tourActive ? "tour-mode" : ""}">${viewHtml}</main>
+      ${renderTourOverlay()}
     </div>
   `;
 }
@@ -970,6 +996,33 @@ function wireEvents(data) {
     const action = target.getAttribute("data-action");
     if (action === "view") {
       state.view = target.getAttribute("data-id");
+      state.tourActive = false;
+      renderShell(data);
+    }
+    if (action === "tourStart") {
+      state.tourActive = true;
+      state.tourStep = 0;
+      state.view = tourSteps[0].view;
+      renderShell(data);
+    }
+    if (action === "tourNext") {
+      if (state.tourStep >= tourSteps.length - 1) {
+        state.tourActive = false;
+      } else {
+        state.tourStep += 1;
+        state.view = tourSteps[state.tourStep].view;
+      }
+      renderShell(data);
+    }
+    if (action === "tourBack") {
+      if (state.tourStep > 0) {
+        state.tourStep -= 1;
+        state.view = tourSteps[state.tourStep].view;
+      }
+      renderShell(data);
+    }
+    if (action === "tourStop") {
+      state.tourActive = false;
       renderShell(data);
     }
     if (action === "profile") {

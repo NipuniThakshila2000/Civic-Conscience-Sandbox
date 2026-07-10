@@ -1115,58 +1115,79 @@ textarea {
   line-height: 1.5;
 }
 
-.howto-flow {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) auto minmax(140px, 1fr) auto minmax(140px, 1fr) auto minmax(140px, 1fr) auto minmax(140px, 1fr);
-  gap: 10px;
-  align-items: stretch;
+.tour-start {
+  margin-left: auto;
 }
 
-.howto-step {
+.tour-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(31, 35, 41, 0.04), rgba(31, 35, 41, 0.14));
+}
+
+.tour-card {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  width: min(420px, calc(100vw - 32px));
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 6px;
   background:
-    linear-gradient(90deg, rgba(158, 241, 205, 0.34), transparent 56%),
+    linear-gradient(90deg, rgba(158, 241, 205, 0.34), transparent 52%),
     #fff;
-  padding: 13px;
-  min-height: 138px;
-  display: grid;
-  gap: 8px;
-  align-content: start;
+  box-shadow: 0 26px 70px rgba(31, 35, 41, 0.22);
+  padding: 18px;
+  pointer-events: auto;
 }
 
-.step-number {
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  background: #1f2329;
-  color: #fff;
-  border-radius: 999px;
-  font-size: 12px;
+.tour-count {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   font-weight: 800;
 }
 
-.howto-step strong {
-  text-transform: uppercase;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-}
-
-.howto-step span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.step-arrow {
-  display: grid;
-  place-items: center;
-  color: var(--ink);
+.tour-card h2 {
+  margin: 8px 0 0;
   font-size: 24px;
   font-weight: 400;
-  padding: 0 2px;
+  letter-spacing: 0;
+}
+
+.tour-card p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.tour-action {
+  border: 1px solid var(--line);
+  background: #fbfbf8;
+  margin-top: 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.tour-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.tour-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tour-mode > .view,
+.tour-mode .panel,
+.tour-mode .overview-hero {
+  scroll-margin-top: 18px;
 }
 
 @media (max-width: 1040px) {
@@ -1183,13 +1204,9 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .howto-flow {
-    grid-template-columns: 1fr;
-  }
-
-  .step-arrow {
-    transform: rotate(90deg);
-    min-height: 22px;
+  .tour-card {
+    right: 16px;
+    bottom: 16px;
   }
 }
 
