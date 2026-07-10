@@ -1124,7 +1124,9 @@ textarea {
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(31, 35, 41, 0.04), rgba(31, 35, 41, 0.14));
+  background:
+    radial-gradient(circle at 34% 34%, transparent 0 18%, rgba(31, 35, 41, 0.06) 18.2% 100%),
+    linear-gradient(180deg, rgba(31, 35, 41, 0.04), rgba(31, 35, 41, 0.14));
 }
 
 .tour-card {
@@ -1172,6 +1174,40 @@ textarea {
   font-size: 13px;
 }
 
+.tour-pointer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: #effff7;
+  margin-top: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pointer-arrow {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1f2329;
+  color: #9ef1cd;
+  font-size: 22px;
+  animation: pointerPulse 1.15s ease-in-out infinite;
+}
+
+@keyframes pointerPulse {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-5px, -5px);
+  }
+}
+
 .tour-controls {
   display: flex;
   gap: 10px;
@@ -1188,6 +1224,17 @@ textarea {
 .tour-mode .panel,
 .tour-mode .overview-hero {
   scroll-margin-top: 18px;
+}
+
+.tour-mode .overview-hero,
+.tour-mode .profile-list,
+.tour-mode #interventionText,
+.tour-mode #draftText,
+.tour-mode .metric-grid,
+.tour-mode .log-grid {
+  outline: 3px solid #9ef1cd;
+  outline-offset: 5px;
+  box-shadow: 0 0 0 9px rgba(158, 241, 205, 0.18);
 }
 
 @media (max-width: 1040px) {

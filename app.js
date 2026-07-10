@@ -77,37 +77,43 @@ const tourSteps = [
     view: "overview",
     title: "Start with the relationship map",
     text: "Read the Overview, hover an ECC card in the interaction field, and note which profiles carry more tension or translation pressure.",
-    action: "Hover an ECC card to open its light box."
+    action: "Hover an ECC card to open its light box.",
+    target: "ECC Interaction Field"
   },
   {
     view: "explorer",
     title: "Inspect an ECC profile",
     text: "Select a stakeholder group and read its six-dimension legibility profile. Low, Medium, and High describe clarity, not moral rank.",
-    action: "Choose a profile from the left register."
+    action: "Choose a profile from the left register.",
+    target: "Profile register"
   },
   {
     view: "sandbox",
     title: "Type an intervention",
     text: "Enter a proposed policy, message, leadership change, shock, or narrative. The warning panel categorizes it before simulation.",
-    action: "Press Simulate after the category warning looks right."
+    action: "Press Simulate after the category warning looks right.",
+    target: "Intervention text box"
   },
   {
     view: "sandbox",
     title: "Rehearse the narrative",
     text: "Draft the public language and run the rehearsal. The suggestion panel flags dignity, trust, honour, process, authority, or justice risks.",
-    action: "Run preview, revise, then run again."
+    action: "Run preview, revise, then run again.",
+    target: "Narrative rehearsal"
   },
   {
     view: "dashboard",
     title: "Read the CCC gap",
     text: "Use the CCC Dashboard to compare overlap, tension, translation, fragmentation risk, and the ECC interaction field in one place.",
-    action: "Check whether the gap narrows or widens."
+    action: "Check whether the gap narrows or widens.",
+    target: "CCC metrics and interaction field"
   },
   {
     view: "log",
     title: "Save and compare scenarios",
     text: "Save the current scenario so it appears in the comparison log alongside baseline and prior entries.",
-    action: "Use Save current scenario when you want to keep a run."
+    action: "Use Save current scenario when you want to keep a run.",
+    target: "Save scenario button"
   }
 ];
 
@@ -938,6 +944,10 @@ function renderTourOverlay() {
         <h2>${step.title}</h2>
         <p>${step.text}</p>
         <div class="tour-action">${step.action}</div>
+        <div class="tour-pointer">
+          <span class="pointer-arrow">↖</span>
+          <span>Look here: ${step.target}</span>
+        </div>
         <div class="tour-controls">
           <button class="secondary-action" data-action="tourBack" ${state.tourStep === 0 ? "disabled" : ""}>Back</button>
           <button class="secondary-action" data-action="tourStop">Finish</button>
