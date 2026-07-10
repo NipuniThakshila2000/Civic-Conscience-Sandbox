@@ -361,11 +361,13 @@ h1 {
   fill: none;
   stroke-linecap: round;
   opacity: 0.24;
-  animation: edgePulse 3s ease-in-out infinite;
+  stroke-dasharray: 10 16;
+  animation: edgePulse 3s ease-in-out infinite, lineFlow 5.4s linear infinite;
 }
 
 .graph-edge.tension {
-  stroke-dasharray: 6 8;
+  stroke-dasharray: 5 10;
+  animation-duration: 2.8s, 4.2s;
 }
 
 .ontology-link {
@@ -373,7 +375,8 @@ h1 {
   stroke: #747b82;
   stroke-width: 1.1;
   opacity: 0.26;
-  animation: edgePulse 4.2s ease-in-out infinite;
+  stroke-dasharray: 9 14;
+  animation: edgePulse 4.2s ease-in-out infinite, lineFlow 6.6s linear infinite;
 }
 
 .graph-node {
@@ -547,6 +550,15 @@ h1 {
   }
   50% {
     opacity: 0.82;
+  }
+}
+
+@keyframes lineFlow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -52;
   }
 }
 
