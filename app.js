@@ -229,12 +229,13 @@ function updateCategorizationPanel(data, text) {
   if (label) label.textContent = categorized.label;
   if (dimension) dimension.textContent = dimensionLabels[categorized.primary_dimension];
   if (pattern) pattern.textContent = categorized.risk_trigger_pattern ? titleCase(categorized.risk_trigger_pattern) : "no primary risk pattern";
+  const riskRegister = document.querySelector("#riskTriggerRegister");
+  if (riskRegister) riskRegister.innerHTML = renderRiskAlerts(data, categorized);
 }
 
 function renderNodeGraph(data) {
   const nodes = nodeLayout(data);
   const edges = graphEdges(data);
-  const center = { x: 276, y: 272, width: 276, height: 70 };
   const anchor = (node) => ({
     x: node.x + node.width / 2,
     y: node.y + node.height / 2
@@ -263,18 +264,6 @@ function renderNodeGraph(data) {
             `;
           })
           .join("")}
-        ${[...nodes.values()]
-          .map((node, index) => {
-            const a = anchor(node);
-            const centerX = center.x + center.width / 2;
-            const centerY = center.y + center.height / 2;
-            const bendY = (a.y + centerY) / 2;
-            return `<path class="ontology-link" d="M ${centerX.toFixed(1)} ${centerY.toFixed(1)} C ${centerX.toFixed(1)} ${bendY.toFixed(1)}, ${a.x.toFixed(1)} ${bendY.toFixed(1)}, ${a.x.toFixed(1)} ${a.y.toFixed(1)}" style="animation-delay:${(index * 0.1).toFixed(2)}s" />`;
-          })
-          .join("")}
-        <foreignObject x="${center.x}" y="${center.y}" width="${center.width}" height="${center.height}">
-          <div xmlns="http://www.w3.org/1999/xhtml" class="ontology-card"></div>
-        </foreignObject>
         ${[...nodes.values()]
           .map(
             (node, index) => {
@@ -454,16 +443,7 @@ function renderOverview(data) {
           <h2>A pluralistic civic conscience, modeled through interaction</h2>
           <p>Every community carries distinct civic language for justice, trust, dignity, process, authority, and honour. This view reads those profiles as a living relationship field.</p>
         </div>
-        <div class="overview-hero-grid">
-          <div class="graph-panel">
-            <div class="graph-title-row">
-              <div>
-                <h3>ECC Interaction Field</h3>
-                <p>Profile nodes pulse with pairwise interaction strength from local fixture data.</p>
-              </div>
-            </div>
-            ${renderNodeGraph(data)}
-          </div>
+        <div class="overview-risk-single">
           <div class="risk-panel">
             <h3>Fragmentation Risk</h3>
             ${renderFragmentationMeter(data, aggregate)}
@@ -500,17 +480,6 @@ function renderOverview(data) {
               ${Object.values(dimensionLabels).map((label) => `<span class="chip">${label}</span>`).join("")}
             </div>
           </div>
-        </div>
-      </div>
-      <div class="panel" style="margin-top:18px">
-        <div class="panel-header">
-          <div>
-            <h2 class="panel-title">ECC Interaction Field</h2>
-            <p class="panel-subtitle">The same node-based relationship field used in the Overview, included here to keep CCC gaps tied to profile interactions.</p>
-          </div>
-        </div>
-        <div class="panel-body">
-          ${renderNodeGraph(data)}
         </div>
       </div>
       <div class="panel" style="margin-top:18px">
@@ -658,8 +627,8 @@ function renderSandbox(data) {
               <p class="panel-subtitle">Flags emphasize dignity, trust, honour, and process sensitivities where relevant.</p>
             </div>
           </div>
-          <div class="panel-body alert-list">
-            ${renderRiskAlerts(data, intervention)}
+          <div class="panel-body alert-list" id="riskTriggerRegister">
+            ${renderRiskAlerts(data, categorized)}
           </div>
         </div>
       </div>
@@ -833,6 +802,17 @@ function renderDashboard(data) {
               ${renderMetric("Translation gap", Math.max(0, interventionGap.translation), "Projected distance")}
             </div>
           </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">ECC Interaction Field</h2>
+            <p class="panel-subtitle">Node-based profile interaction diagram used to contextualize CCC gap movement.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          ${renderNodeGraph(data)}
         </div>
       </div>
       <div class="panel" style="margin-top:18px">
