@@ -148,6 +148,17 @@ function nodeLayout(data) {
   );
 }
 
+function notablePattern(profile) {
+  const low = Object.entries(profile.dimensions)
+    .filter(([, detail]) => detail.legibility === "low")
+    .map(([key]) => dimensionLabels[key]);
+  const high = Object.entries(profile.dimensions)
+    .filter(([, detail]) => detail.legibility === "high")
+    .map(([key]) => dimensionLabels[key]);
+  if (low.length) return `Low clarity: ${low.join(", ")}`;
+  return `High clarity: ${high.slice(0, 3).join(", ")}`;
+}
+
 function renderNodeGraph(data) {
   const nodes = nodeLayout(data);
   const edges = graphEdges(data);
@@ -175,13 +186,28 @@ function renderNodeGraph(data) {
           .join("")}
         ${[...nodes.values()]
           .map(
-            (node, index) => `
-              <g class="graph-node" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
+            (node, index) => {
+              const metrics = node.current_relationships;
+              const tooltipX = node.x > 360 ? node.x - 178 : node.x + 22;
+              const tooltipY = node.y > 220 ? node.y - 132 : node.y - 20;
+              return `
+              <g class="graph-node" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
                 <circle cx="${node.x}" cy="${node.y}" r="${(node.r + 5).toFixed(1)}" fill="${node.color}" opacity="0.12" />
                 <circle cx="${node.x}" cy="${node.y}" r="${node.r.toFixed(1)}" fill="${node.color}" filter="url(#softGlow)" />
                 <text x="${node.x}" y="${node.y + node.r + 16}" text-anchor="middle">${node.ecc_id.replace("ecc_", "ECC ")}</text>
+                <foreignObject class="node-tooltip" x="${tooltipX}" y="${tooltipY}" width="168" height="128">
+                  <div xmlns="http://www.w3.org/1999/xhtml" class="node-card">
+                    <strong>${node.label}</strong>
+                    <span>Share ${pct(node.population_share)}</span>
+                    <span>Overlap ${pct(metrics.overlap_score)}</span>
+                    <span>Tension ${pct(metrics.tension_score)}</span>
+                    <span>Translation ${pct(metrics.translation_capacity)}</span>
+                    <em>Notable pattern: ${notablePattern(node)}</em>
+                  </div>
+                </foreignObject>
               </g>
-            `
+            `;
+            }
           )
           .join("")}
       </svg>
@@ -392,9 +418,6 @@ function renderProfileTable(data) {
       <tbody>
         ${data.ecc_profiles
           .map((profile) => {
-            const dims = Object.entries(profile.dimensions)
-              .filter(([, detail]) => detail.legibility === "low")
-              .map(([key]) => dimensionLabels[key]);
             return `
               <tr>
                 <td><strong>${profile.label}</strong></td>
@@ -402,7 +425,7 @@ function renderProfileTable(data) {
                 <td>${pct(profile.current_relationships.overlap_score)}</td>
                 <td>${pct(profile.current_relationships.tension_score)}</td>
                 <td>${pct(profile.current_relationships.translation_capacity)}</td>
-                <td>${dims.length ? dims.join(", ") : "No Low category recorded"}</td>
+                <td>${notablePattern(profile)}</td>
               </tr>
             `;
           })
