@@ -1,4 +1,4 @@
-const DATA_FILE = "./civic_conscience_fixture_data%20(1).json";
+const DATA_FILE = "./JSON%20civic_conscience_fixture_data.json";
 
 const app = document.querySelector("#app");
 
@@ -19,6 +19,19 @@ const dimensionLabels = {
   dishonour: "Dishonour",
   authority: "Authority",
   trust: "Trust"
+};
+
+const cohortPalette = {
+  ecc_01: "#35c0a1",
+  ecc_02: "#ff7a59",
+  ecc_03: "#8a7df0",
+  ecc_04: "#e0a331",
+  ecc_05: "#d95f86",
+  ecc_06: "#2f9cb3",
+  ecc_07: "#c96f37",
+  ecc_08: "#6fbf73",
+  ecc_09: "#a66bd6",
+  ecc_10: "#e06f9f"
 };
 
 const patternWords = {
@@ -53,6 +66,158 @@ function idealGap(data, values) {
     tension: Math.max(0, values.tension - data.ideal_condition.tension_target_max),
     translation: data.ideal_condition.translation_target - values.translation
   };
+}
+
+function graphEdges(data) {
+  return data.interaction_graph?.edges || [];
+}
+
+function graphConnectivity(data) {
+  const direct = data.interaction_graph?.connectivity_by_ecc;
+  if (direct) {
+    return data.ecc_profiles.map((profile) => direct[profile.ecc_id] || 0);
+  }
+  const edges = graphEdges(data);
+  return data.ecc_profiles.map((profile) => {
+    const profileEdges = edges.filter((edge) => edge.source === profile.ecc_id || edge.target === profile.ecc_id);
+    return profileEdges.length ? mean(profileEdges.map((edge) => edge.intensity)) : 0;
+  });
+}
+
+function fragmentationRisk(data, values = currentAggregate(data)) {
+  const weights = data.fragmentation_index?.weights || {
+    connectivity_gap: 0.4,
+    tension: 0.35,
+    translation_capacity: 0.25
+  };
+  const avgConnectivity = mean(graphConnectivity(data));
+  const value = clamp(
+    weights.connectivity_gap * (1 - avgConnectivity) +
+      weights.tension * values.tension +
+      weights.translation_capacity * (1 - values.translation)
+  );
+  const zones =
+    data.fragmentation_index?.zones || [
+      { label: "Low", range: [0, 0.33], meaning: "Cohorts remain cross-connected; shared civic goal intact." },
+      { label: "Moderate", range: [0.33, 0.66], meaning: "Some cohorts drifting toward isolated interaction." },
+      { label: "High", range: [0.66, 1], meaning: "Sustained isolation and unresolved tension." }
+    ];
+  const zone = zones.find((item) => value >= item.range[0] && value <= item.range[1]) || zones[zones.length - 1];
+  return { value, zone, avgConnectivity };
+}
+
+function polarToCartesian(cx, cy, radius, angleDeg) {
+  const angleRad = ((angleDeg - 180) * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.cos(angleRad),
+    y: cy + radius * Math.sin(angleRad)
+  };
+}
+
+function arcPath(cx, cy, radius, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, radius, endAngle);
+  const end = polarToCartesian(cx, cy, radius, startAngle);
+  const largeArc = endAngle - startAngle <= 180 ? 0 : 1;
+  return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${radius} ${radius} 0 ${largeArc} 0 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+}
+
+function nodeLayout(data) {
+  const positions = [
+    [80, 74],
+    [204, 50],
+    [336, 78],
+    [462, 138],
+    [424, 266],
+    [298, 322],
+    [166, 304],
+    [70, 222],
+    [238, 184],
+    [354, 210]
+  ];
+  return new Map(
+    data.ecc_profiles.map((profile, index) => [
+      profile.ecc_id,
+      {
+        ...profile,
+        x: positions[index]?.[0] || 240,
+        y: positions[index]?.[1] || 180,
+        r: 10 + profile.population_share * 72,
+        color: cohortPalette[profile.ecc_id] || "#9fb0c2"
+      }
+    ])
+  );
+}
+
+function renderNodeGraph(data) {
+  const nodes = nodeLayout(data);
+  const edges = graphEdges(data);
+  return `
+    <div class="node-graph-wrap">
+      <svg class="node-graph" viewBox="0 0 540 370" role="img" aria-label="ECC profile interaction graph">
+        <defs>
+          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        ${edges
+          .map((edge, index) => {
+            const source = nodes.get(edge.source);
+            const target = nodes.get(edge.target);
+            if (!source || !target) return "";
+            const color = edge.character === "tension" ? "#d95f86" : source.color;
+            const width = 1.2 + edge.intensity * 4.2;
+            const duration = (4.2 - edge.intensity * 1.7).toFixed(2);
+            return `
+              <line class="graph-edge ${edge.character}" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" stroke="${color}" stroke-width="${width.toFixed(2)}" style="animation-duration:${duration}s; animation-delay:${(index * 0.18).toFixed(2)}s" />
+            `;
+          })
+          .join("")}
+        ${[...nodes.values()]
+          .map(
+            (node, index) => `
+              <g class="graph-node" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
+                <circle cx="${node.x}" cy="${node.y}" r="${(node.r + 5).toFixed(1)}" fill="${node.color}" opacity="0.12" />
+                <circle cx="${node.x}" cy="${node.y}" r="${node.r.toFixed(1)}" fill="${node.color}" filter="url(#softGlow)" />
+                <text x="${node.x}" y="${node.y + node.r + 16}" text-anchor="middle">${node.ecc_id.replace("ecc_", "ECC ")}</text>
+              </g>
+            `
+          )
+          .join("")}
+      </svg>
+      <div class="graph-legend">
+        <span>Node size = population share</span>
+        <span>Edge weight = interaction strength</span>
+        <span>Rose edges = tension-character interaction</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderFragmentationMeter(data, values = currentAggregate(data), compact = false) {
+  const risk = fragmentationRisk(data, values);
+  const angle = risk.value * 180;
+  const needle = polarToCartesian(100, 100, 68, angle);
+  return `
+    <div class="frag-meter ${compact ? "compact" : ""}">
+      <svg viewBox="0 0 200 124" role="img" aria-label="Fragmentation risk meter">
+        <path d="${arcPath(100, 100, 76, 0, 59.4)}" class="meter-zone zone-low" />
+        <path d="${arcPath(100, 100, 76, 59.4, 118.8)}" class="meter-zone zone-mid" />
+        <path d="${arcPath(100, 100, 76, 118.8, 180)}" class="meter-zone zone-high" />
+        <path d="${arcPath(100, 100, 76, 0, 180)}" class="meter-track" />
+        <line class="meter-needle" x1="100" y1="100" x2="${needle.x.toFixed(2)}" y2="${needle.y.toFixed(2)}" />
+        <circle cx="100" cy="100" r="5" class="meter-hub" />
+      </svg>
+      <div class="frag-value">${pct(risk.value)}</div>
+      <div class="frag-zone">${risk.zone.label} fragmentation risk</div>
+      <div class="small">${risk.zone.meaning}</div>
+      <div class="chip-row frag-factors">
+        <span class="chip">Density ${pct(risk.avgConnectivity)}</span>
+        <span class="chip">Tension ${pct(values.tension)}</span>
+        <span class="chip">Translation ${pct(values.translation)}</span>
+      </div>
+    </div>
+  `;
 }
 
 function interventionEffect(profile, intervention) {
@@ -151,6 +316,28 @@ function renderOverview(data) {
   const gap = idealGap(data, aggregate);
   return `
     <section class="view active">
+      <div class="overview-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Policy Foresight | Live Overview</div>
+          <h2>A pluralistic civic conscience, modeled through interaction</h2>
+          <p>Every community carries distinct civic language for justice, trust, dignity, process, authority, and honour. This view reads those profiles as a living relationship field.</p>
+        </div>
+        <div class="overview-hero-grid">
+          <div class="graph-panel">
+            <div class="graph-title-row">
+              <div>
+                <h3>ECC Interaction Field</h3>
+                <p>Profile nodes pulse with pairwise interaction strength from local fixture data.</p>
+              </div>
+            </div>
+            ${renderNodeGraph(data)}
+          </div>
+          <div class="risk-panel">
+            <h3>Fragmentation Risk</h3>
+            ${renderFragmentationMeter(data, aggregate)}
+          </div>
+        </div>
+      </div>
       <div class="grid three">
         ${renderMetric("Overlap condition", aggregate.overlap, `Ideal reference ${pct(data.ideal_condition.overlap_target)}`)}
         ${renderMetric("Tension condition", aggregate.tension, `Maximum reference ${pct(data.ideal_condition.tension_target_max)}`, "tension")}
@@ -467,6 +654,19 @@ function renderDashboard(data) {
             </div>
           </div>
         </div>
+        <div class="panel dark-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Fragmentation Risk</h2>
+              <p class="panel-subtitle">Uses the same interaction density, tension, and translation computation as the Overview meter.</p>
+            </div>
+          </div>
+          <div class="panel-body">
+            ${renderFragmentationMeter(data, aggregate, true)}
+          </div>
+        </div>
+      </div>
+      <div class="grid two" style="margin-top:18px">
         <div class="panel">
           <div class="panel-header">
             <div>

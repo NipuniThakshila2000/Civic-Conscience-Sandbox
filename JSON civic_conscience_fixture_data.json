@@ -1,0 +1,451 @@
+{
+  "meta": {
+    "title": "Civic Conscience Sandbox — Illustrative Dataset",
+    "description": "Locally-generated reference dataset for the ECC profile explorer, sandbox simulation, CCC dashboard, and narrative rehearsal module. No external data sources. All group labels are attribute/role-based cohorts, not nationalities or ethnicities.",
+    "dimensions": ["justice", "process", "dignity", "dishonour", "authority", "trust"],
+    "legibility_note": "Low / Medium / High measures clarity, coherence, and civic translatability of a group's language for that dimension — it is not a moral ranking. Low does not mean inferior; High does not mean virtuous.",
+    "version": "1.0"
+  },
+
+  "ideal_condition": {
+    "overlap_target": 0.65,
+    "tension_target_max": 0.20,
+    "translation_target": 0.60,
+    "note": "Used to compute the CCC gap: the distance between current aggregate Overlap/Tension/Translation and these targets."
+  },
+
+  "interaction_graph": {
+    "description": "Pairwise interaction data between ECC profiles. Powers the live node view on the Overview page: edge intensity drives line thickness/pulse rate, node size is population_share from ecc_profiles.",
+    "edges": [
+      { "source": "ecc_01", "target": "ecc_02", "intensity": 0.72, "character": "overlap" },
+      { "source": "ecc_01", "target": "ecc_04", "intensity": 0.58, "character": "overlap" },
+      { "source": "ecc_01", "target": "ecc_07", "intensity": 0.65, "character": "overlap" },
+      { "source": "ecc_01", "target": "ecc_05", "intensity": 0.12, "character": "tension" },
+      { "source": "ecc_02", "target": "ecc_07", "intensity": 0.60, "character": "overlap" },
+      { "source": "ecc_02", "target": "ecc_05", "intensity": 0.15, "character": "tension" },
+      { "source": "ecc_03", "target": "ecc_08", "intensity": 0.55, "character": "overlap" },
+      { "source": "ecc_03", "target": "ecc_10", "intensity": 0.62, "character": "overlap" },
+      { "source": "ecc_04", "target": "ecc_06", "intensity": 0.50, "character": "overlap" },
+      { "source": "ecc_04", "target": "ecc_08", "intensity": 0.47, "character": "overlap" },
+      { "source": "ecc_05", "target": "ecc_09", "intensity": 0.44, "character": "overlap" },
+      { "source": "ecc_05", "target": "ecc_07", "intensity": 0.10, "character": "tension" },
+      { "source": "ecc_06", "target": "ecc_09", "intensity": 0.38, "character": "overlap" },
+      { "source": "ecc_08", "target": "ecc_10", "intensity": 0.58, "character": "overlap" },
+      { "source": "ecc_09", "target": "ecc_10", "intensity": 0.30, "character": "tension" }
+    ],
+    "connectivity_by_ecc": {
+      "note": "Average edge intensity per profile across all its edges above. Low connectivity + high tension-character edges is what drags a profile toward the fragmentation zone.",
+      "ecc_01": 0.52,
+      "ecc_02": 0.49,
+      "ecc_03": 0.585,
+      "ecc_04": 0.52,
+      "ecc_05": 0.20,
+      "ecc_06": 0.44,
+      "ecc_07": 0.45,
+      "ecc_08": 0.53,
+      "ecc_09": 0.37,
+      "ecc_10": 0.50
+    }
+  },
+
+  "fragmentation_index": {
+    "description": "Computed value driving the Fragmentation Risk gauge on the Overview page and the CCC Dashboard. Recompute whenever interaction_graph or any ecc_profiles current_relationships change.",
+    "formula_note": "fragmentation_risk = clamp01( w1 * (1 - avg_connectivity) + w2 * avg_tension_score - w3 * avg_translation_capacity )",
+    "weights": { "connectivity_gap": 0.40, "tension": 0.35, "translation_capacity": 0.25 },
+    "zones": [
+      { "label": "Low", "range": [0.0, 0.33], "color_ramp": "c-teal", "meaning": "Cohorts remain cross-connected; shared civic goal intact." },
+      { "label": "Moderate", "range": [0.33, 0.66], "color_ramp": "c-amber", "meaning": "Some cohorts drifting toward isolated, in-group-only interaction." },
+      { "label": "High", "range": [0.66, 1.0], "color_ramp": "c-red", "meaning": "Sustained isolation and unresolved tension; survival-mode behavior likely for flagged cohorts." }
+    ],
+    "current_value": 0.47,
+    "current_zone": "Moderate",
+    "top_contributing_ecc": ["ecc_05", "ecc_09", "ecc_10"]
+  },
+
+  "ecc_profiles": [
+    {
+      "ecc_id": "ecc_01",
+      "label": "Institutional Loyalists",
+      "population_share": 0.12,
+      "dimensions": {
+        "justice":   { "legibility": "high",   "meaning": "Justice means consistent application of existing law, regardless of outcome." },
+        "process":   { "legibility": "high",   "meaning": "Process legitimacy comes from following established procedure correctly." },
+        "dignity":   { "legibility": "medium", "meaning": "Dignity is tied to being treated according to one's formal role or rank." },
+        "dishonour": { "legibility": "medium", "meaning": "Dishonour is failing to follow proper channels, more than public criticism itself." },
+        "authority": { "legibility": "high",   "meaning": "Authority is legitimate by virtue of office and correct appointment." },
+        "trust":     { "legibility": "high",   "meaning": "Trust is extended by default to institutions until specifically broken." }
+      },
+      "current_relationships": { "overlap_score": 0.62, "tension_score": 0.18, "translation_capacity": 0.55 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_02",
+      "label": "Enforcement Sector",
+      "population_share": 0.07,
+      "dimensions": {
+        "justice":   { "legibility": "high",   "meaning": "Justice means uniform, predictable consequences for rule violations." },
+        "process":   { "legibility": "high",   "meaning": "Process is the primary safeguard; deviation from it is itself a violation." },
+        "dignity":   { "legibility": "low",    "meaning": "Dignity concerns are often read as secondary to compliance and order." },
+        "dishonour": { "legibility": "high",   "meaning": "Public failure to enforce rules is a significant institutional shame." },
+        "authority": { "legibility": "high",   "meaning": "Authority is self-evident in role; enforcement personnel expect deference." },
+        "trust":     { "legibility": "medium", "meaning": "Trust is contingent on reciprocal respect for the chain of command." }
+      },
+      "current_relationships": { "overlap_score": 0.55, "tension_score": 0.25, "translation_capacity": 0.40 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_03",
+      "label": "Economically Insecure Households",
+      "population_share": 0.16,
+      "dimensions": {
+        "justice":   { "legibility": "medium", "meaning": "Equal treatment regardless of connections." },
+        "process":   { "legibility": "low",    "meaning": "Distrust of formal procedure; relies on informal mediation." },
+        "dignity":   { "legibility": "high",   "meaning": "Being seen and heard by institutions." },
+        "dishonour": { "legibility": "medium", "meaning": "Public shaming seen as more severe than legal penalty." },
+        "authority": { "legibility": "low",    "meaning": "Legitimacy tied to visible fairness, not office." },
+        "trust":     { "legibility": "medium", "meaning": "Conditional; based on track record, not institution type." }
+      },
+      "current_relationships": { "overlap_score": 0.44, "tension_score": 0.31, "translation_capacity": 0.38 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_04",
+      "label": "Reciprocity-Sensitive Moderates",
+      "population_share": 0.14,
+      "dimensions": {
+        "justice":   { "legibility": "high",   "meaning": "Justice means proportional exchange: what you give should match what you get." },
+        "process":   { "legibility": "medium", "meaning": "Process matters, but is judged by whether it produces fair outcomes." },
+        "dignity":   { "legibility": "medium", "meaning": "Dignity is respected through being kept informed and consulted." },
+        "dishonour": { "legibility": "low",    "meaning": "Dishonour is less salient than perceived unfairness." },
+        "authority": { "legibility": "medium", "meaning": "Authority is respected when it demonstrates competence, not just position." },
+        "trust":     { "legibility": "high",   "meaning": "Trust is built incrementally through consistent reciprocity." }
+      },
+      "current_relationships": { "overlap_score": 0.58, "tension_score": 0.20, "translation_capacity": 0.50 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_05",
+      "label": "Civic Skeptics",
+      "population_share": 0.10,
+      "dimensions": {
+        "justice":   { "legibility": "low",    "meaning": "Justice is viewed as selectively applied, favoring the well-connected." },
+        "process":   { "legibility": "low",    "meaning": "Formal process is seen as theater masking predetermined outcomes." },
+        "dignity":   { "legibility": "medium", "meaning": "Dignity is preserved through skepticism itself, as a form of self-protection." },
+        "dishonour": { "legibility": "high",   "meaning": "Being seen as naive or complicit is a significant social cost." },
+        "authority": { "legibility": "low",    "meaning": "Authority is presumed illegitimate until proven otherwise." },
+        "trust":     { "legibility": "low",    "meaning": "Trust is withheld by default; extended only after repeated verification." }
+      },
+      "current_relationships": { "overlap_score": 0.30, "tension_score": 0.48, "translation_capacity": 0.22 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_06",
+      "label": "Emerging Professional Class",
+      "population_share": 0.11,
+      "dimensions": {
+        "justice":   { "legibility": "high",   "meaning": "Justice means transparent, merit-based systems." },
+        "process":   { "legibility": "high",   "meaning": "Process legitimacy is tied to documented, auditable procedure." },
+        "dignity":   { "legibility": "medium", "meaning": "Dignity is linked to recognition of expertise and contribution." },
+        "dishonour": { "legibility": "low",    "meaning": "Dishonour is less relevant than reputational or professional standing." },
+        "authority": { "legibility": "medium", "meaning": "Authority is respected when paired with demonstrated competence." },
+        "trust":     { "legibility": "medium", "meaning": "Trust is extended based on institutional track record and data." }
+      },
+      "current_relationships": { "overlap_score": 0.53, "tension_score": 0.22, "translation_capacity": 0.47 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_07",
+      "label": "Legacy Authority Networks",
+      "population_share": 0.08,
+      "dimensions": {
+        "justice":   { "legibility": "medium", "meaning": "Justice means preserving stability and continuity of established order." },
+        "process":   { "legibility": "high",   "meaning": "Process is valued as the mechanism that preserves institutional continuity." },
+        "dignity":   { "legibility": "high",   "meaning": "Dignity is closely tied to preservation of status and historical role." },
+        "dishonour": { "legibility": "high",   "meaning": "Loss of face or public challenge to standing is a serious matter." },
+        "authority": { "legibility": "high",   "meaning": "Authority is inherited through position, precedent, and lineage." },
+        "trust":     { "legibility": "medium", "meaning": "Trust flows along existing relationships and networks." }
+      },
+      "current_relationships": { "overlap_score": 0.48, "tension_score": 0.28, "translation_capacity": 0.35 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_08",
+      "label": "Grassroots Mediators",
+      "population_share": 0.09,
+      "dimensions": {
+        "justice":   { "legibility": "medium", "meaning": "Justice means restoring relationships, not just enforcing rules." },
+        "process":   { "legibility": "medium", "meaning": "Process is valued when it allows space for dialogue and mediation." },
+        "dignity":   { "legibility": "high",   "meaning": "Dignity is central; recognition and being heard matter more than outcome alone." },
+        "dishonour": { "legibility": "medium", "meaning": "Dishonour is community-defined, not institutionally defined." },
+        "authority": { "legibility": "low",    "meaning": "Authority is earned through service and relationship, not title." },
+        "trust":     { "legibility": "high",   "meaning": "Trust is built through consistent presence and demonstrated care." }
+      },
+      "current_relationships": { "overlap_score": 0.51, "tension_score": 0.24, "translation_capacity": 0.49 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_09",
+      "label": "Digitally Networked Youth",
+      "population_share": 0.08,
+      "dimensions": {
+        "justice":   { "legibility": "medium", "meaning": "Justice is judged against globally visible standards and comparisons." },
+        "process":   { "legibility": "low",    "meaning": "Formal process is seen as slow and disconnected from real accountability." },
+        "dignity":   { "legibility": "medium", "meaning": "Dignity includes being taken seriously despite age or lack of formal standing." },
+        "dishonour": { "legibility": "high",   "meaning": "Public exposure and reputational damage carry outsized weight." },
+        "authority": { "legibility": "low",    "meaning": "Authority must be continuously demonstrated, not assumed from position." },
+        "trust":     { "legibility": "low",    "meaning": "Trust is provisional and easily revoked after a single visible failure." }
+      },
+      "current_relationships": { "overlap_score": 0.35, "tension_score": 0.42, "translation_capacity": 0.28 },
+      "risk_flags": []
+    },
+    {
+      "ecc_id": "ecc_10",
+      "label": "Marginalized Service Workers",
+      "population_share": 0.05,
+      "dimensions": {
+        "justice":   { "legibility": "low",    "meaning": "Justice is often experienced as inconsistently applied to people like them." },
+        "process":   { "legibility": "low",    "meaning": "Formal process is frequently inaccessible or intimidating to navigate." },
+        "dignity":   { "legibility": "high",   "meaning": "Dignity concerns center on basic recognition and respectful treatment." },
+        "dishonour": { "legibility": "medium", "meaning": "Public shaming compounds existing precarity." },
+        "authority": { "legibility": "low",    "meaning": "Authority is trusted only when it demonstrates direct, visible benefit." },
+        "trust":     { "legibility": "low",    "meaning": "Trust is limited by past experience of being overlooked." }
+      },
+      "current_relationships": { "overlap_score": 0.28, "tension_score": 0.45, "translation_capacity": 0.20 },
+      "risk_flags": []
+    }
+  ],
+
+  "interventions": [
+    {
+      "intervention_id": "int_01",
+      "type": "policy_reform",
+      "label": "Anti-Corruption Enforcement Reform",
+      "description": "Introduces stricter enforcement and audit requirements across institutions.",
+      "primary_dimension": "authority",
+      "risk_trigger_pattern": "top_down_directive",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.10, "translation_delta": -0.04 },
+        "medium": { "tension_delta": 0.04, "translation_delta": 0.01 },
+        "high":   { "tension_delta": -0.02, "translation_delta": 0.05 }
+      },
+      "linked_suggestions": ["sugg_authority_01"]
+    },
+    {
+      "intervention_id": "int_02",
+      "type": "policy_reform",
+      "label": "Subsidy Reduction",
+      "description": "Reduces a household subsidy program as part of a fiscal correction.",
+      "primary_dimension": "dignity",
+      "risk_trigger_pattern": "hardship_unacknowledged",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.06, "translation_delta": -0.02 },
+        "medium": { "tension_delta": 0.09, "translation_delta": -0.05 },
+        "high":   { "tension_delta": 0.14, "translation_delta": -0.09 }
+      },
+      "linked_suggestions": ["sugg_dignity_01"]
+    },
+    {
+      "intervention_id": "int_03",
+      "type": "policy_reform",
+      "label": "Transparency Mandate",
+      "description": "Requires public disclosure of decision records for a government process.",
+      "primary_dimension": "trust",
+      "risk_trigger_pattern": "institution_led_framing",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": -0.03, "translation_delta": 0.08 },
+        "medium": { "tension_delta": -0.02, "translation_delta": 0.05 },
+        "high":   { "tension_delta": 0.00, "translation_delta": 0.02 }
+      },
+      "linked_suggestions": ["sugg_trust_01"]
+    },
+    {
+      "intervention_id": "int_04",
+      "type": "leadership_change",
+      "label": "Change of Head of Government",
+      "description": "A transition in the top executive office, announced with limited prior signaling.",
+      "primary_dimension": "authority",
+      "risk_trigger_pattern": "top_down_directive",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.08, "translation_delta": -0.03 },
+        "medium": { "tension_delta": 0.05, "translation_delta": -0.01 },
+        "high":   { "tension_delta": 0.02, "translation_delta": 0.00 }
+      },
+      "linked_suggestions": ["sugg_authority_01"]
+    },
+    {
+      "intervention_id": "int_05",
+      "type": "leadership_change",
+      "label": "Cabinet Reshuffle",
+      "description": "Multiple department heads are reassigned or replaced.",
+      "primary_dimension": "process",
+      "risk_trigger_pattern": "procedure_only_justification",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.05, "translation_delta": -0.02 },
+        "medium": { "tension_delta": 0.02, "translation_delta": 0.00 },
+        "high":   { "tension_delta": -0.01, "translation_delta": 0.02 }
+      },
+      "linked_suggestions": ["sugg_process_01"]
+    },
+    {
+      "intervention_id": "int_06",
+      "type": "departmental_change",
+      "label": "Regulatory Body Restructuring",
+      "description": "Merges or restructures an enforcement/regulatory department.",
+      "primary_dimension": "process",
+      "risk_trigger_pattern": "procedure_only_justification",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.07, "translation_delta": -0.03 },
+        "medium": { "tension_delta": 0.03, "translation_delta": 0.00 },
+        "high":   { "tension_delta": -0.02, "translation_delta": 0.03 }
+      },
+      "linked_suggestions": ["sugg_process_01"]
+    },
+    {
+      "intervention_id": "int_07",
+      "type": "news_narrative",
+      "label": "Distrust-Amplifying News Narrative",
+      "description": "Media coverage emphasizing institutional failure or hidden motives.",
+      "primary_dimension": "trust",
+      "risk_trigger_pattern": "institution_led_framing",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.12, "translation_delta": -0.07 },
+        "medium": { "tension_delta": 0.07, "translation_delta": -0.04 },
+        "high":   { "tension_delta": 0.02, "translation_delta": -0.01 }
+      },
+      "linked_suggestions": ["sugg_trust_01"]
+    },
+    {
+      "intervention_id": "int_08",
+      "type": "news_narrative",
+      "label": "Trust-Building News Narrative",
+      "description": "Media coverage emphasizing verifiable follow-through and accountability.",
+      "primary_dimension": "trust",
+      "risk_trigger_pattern": null,
+      "effect_by_legibility": {
+        "low":    { "tension_delta": -0.05, "translation_delta": 0.06 },
+        "medium": { "tension_delta": -0.03, "translation_delta": 0.04 },
+        "high":   { "tension_delta": -0.01, "translation_delta": 0.02 }
+      },
+      "linked_suggestions": []
+    },
+    {
+      "intervention_id": "int_09",
+      "type": "economic_shock",
+      "label": "Economic Downturn",
+      "description": "A broad-based economic contraction affecting household income and prices.",
+      "primary_dimension": "justice",
+      "risk_trigger_pattern": "equality_without_equity_signal",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.14, "translation_delta": -0.08 },
+        "medium": { "tension_delta": 0.09, "translation_delta": -0.05 },
+        "high":   { "tension_delta": 0.03, "translation_delta": -0.01 }
+      },
+      "linked_suggestions": ["sugg_justice_01"]
+    },
+    {
+      "intervention_id": "int_10",
+      "type": "messaging",
+      "label": "Blame-Framed Shortfall Announcement",
+      "description": "A statement that attributes a fiscal or service shortfall to the behavior of an affected group.",
+      "primary_dimension": "dishonour",
+      "risk_trigger_pattern": "public_blame_framing",
+      "effect_by_legibility": {
+        "low":    { "tension_delta": 0.06, "translation_delta": -0.03 },
+        "medium": { "tension_delta": 0.10, "translation_delta": -0.06 },
+        "high":   { "tension_delta": 0.15, "translation_delta": -0.10 }
+      },
+      "linked_suggestions": ["sugg_dishonour_01"]
+    }
+  ],
+
+  "suggestion_bank": [
+    {
+      "id": "sugg_dignity_01",
+      "trigger": { "dimension": "dignity", "pattern": "hardship_unacknowledged" },
+      "diagnosis": "Message states the outcome without acknowledging who absorbs the cost. Groups with high Dignity legibility read this as being unseen.",
+      "suggestion": "Name the affected group directly and acknowledge the burden before explaining the rationale. Sequence matters: acknowledgment first, justification second.",
+      "example_rewrite": "We recognize this change places real strain on households already stretched thin. That strain is not incidental — it's the first thing we considered.",
+      "projected_effect": { "tension_delta": -0.08, "translation_delta": 0.06 }
+    },
+    {
+      "id": "sugg_trust_01",
+      "trigger": { "dimension": "trust", "pattern": "institution_led_framing" },
+      "diagnosis": "Framing leads with institutional authority ('the ministry has decided') rather than track record or shared benefit, which reads as low-legitimacy to groups whose Trust is conditional on outcomes, not office.",
+      "suggestion": "Lead with a verifiable commitment or track record rather than the fact that a decision was made. Replace 'has decided' framing with 'here is what will be true, and how you can check it.'",
+      "example_rewrite": "Here is exactly what changes, when, and how you'll be able to verify it's being applied fairly.",
+      "projected_effect": { "tension_delta": -0.05, "translation_delta": 0.09 }
+    },
+    {
+      "id": "sugg_process_01",
+      "trigger": { "dimension": "process", "pattern": "procedure_only_justification" },
+      "diagnosis": "Justification relies entirely on formal procedure ('this follows established protocol'). Groups with low Process legibility distrust formal procedure itself and read this as evasive.",
+      "suggestion": "Supplement procedural justification with a plain-language explanation of the actual reasoning, independent of the process that produced it.",
+      "example_rewrite": "Beyond the formal review, here's the plain reasoning: costs were rising faster than the fund could sustain, and delaying only shifts the burden later.",
+      "projected_effect": { "tension_delta": -0.04, "translation_delta": 0.07 }
+    },
+    {
+      "id": "sugg_authority_01",
+      "trigger": { "dimension": "authority", "pattern": "top_down_directive" },
+      "diagnosis": "Message is phrased as a directive from office rather than earned legitimacy. Groups with low Authority legibility (legitimacy tied to visible fairness, not title) react to tone, not seniority.",
+      "suggestion": "Reframe from directive to demonstrated fairness — show the mechanism that prevents the powerful from being exempted.",
+      "example_rewrite": "This applies the same way regardless of size or connections — here's the specific enforcement step that guarantees that.",
+      "projected_effect": { "tension_delta": -0.06, "translation_delta": 0.05 }
+    },
+    {
+      "id": "sugg_dishonour_01",
+      "trigger": { "dimension": "dishonour", "pattern": "public_blame_framing" },
+      "diagnosis": "Draft implicitly assigns blame or fault to the affected group. For groups where public shaming carries more weight than formal penalty, this reads as punitive even if unintended.",
+      "suggestion": "Separate the policy rationale from any language that could be read as blaming the affected group for the condition being addressed.",
+      "example_rewrite": "This isn't about who caused the shortfall — it's about the fairest way to close it going forward.",
+      "projected_effect": { "tension_delta": -0.07, "translation_delta": 0.04 }
+    },
+    {
+      "id": "sugg_justice_01",
+      "trigger": { "dimension": "justice", "pattern": "equality_without_equity_signal" },
+      "diagnosis": "Message emphasizes uniform treatment ('applies to everyone equally') without addressing groups who read justice as protection from disproportionate harm, not just equal rules.",
+      "suggestion": "Pair the equal-treatment claim with an explicit acknowledgment of who is more exposed to the downside, and what protects them.",
+      "example_rewrite": "The rule is the same for everyone — and because we know it doesn't land the same for everyone, here's the specific protection in place for those most exposed.",
+      "projected_effect": { "tension_delta": -0.06, "translation_delta": 0.08 }
+    }
+  ],
+
+  "sample_rehearsal_log": {
+    "intervention_id": "int_02",
+    "attempts": [
+      {
+        "iteration": 1,
+        "draft_text": "This adjustment is a necessary fiscal correction.",
+        "risk_flags": [
+          { "ecc_id": "ecc_03", "dimension": "dignity", "severity": "high" },
+          { "ecc_id": "ecc_10", "dimension": "dignity", "severity": "high" }
+        ],
+        "suggestions_shown": ["sugg_dignity_01"],
+        "resulting_scores": { "overlap": 0.41, "tension": 0.52, "translation": 0.33 }
+      },
+      {
+        "iteration": 2,
+        "draft_text": "This adjustment is difficult, and we recognize the real strain it places on households already stretched thin. Here is how we're limiting that impact for those most affected.",
+        "risk_flags": [],
+        "suggestions_shown": [],
+        "resulting_scores": { "overlap": 0.49, "tension": 0.38, "translation": 0.44 }
+      }
+    ]
+  },
+
+  "sample_scenario_log": [
+    {
+      "scenario_id": "scn_01",
+      "label": "Baseline condition",
+      "timestamp": "2026-06-01T09:00:00Z",
+      "interventions_applied": [],
+      "ccc_gap": { "overlap": 0.46, "tension": 0.30, "translation": 0.36 }
+    },
+    {
+      "scenario_id": "scn_02",
+      "label": "Subsidy reduction, revised framing",
+      "timestamp": "2026-06-01T09:20:00Z",
+      "interventions_applied": ["int_02"],
+      "ccc_gap": { "overlap": 0.49, "tension": 0.38, "translation": 0.44 }
+    }
+  ]
+}
