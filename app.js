@@ -22,16 +22,16 @@ const dimensionLabels = {
 };
 
 const cohortPalette = {
-  ecc_01: "#35c0a1",
-  ecc_02: "#ff7a59",
-  ecc_03: "#8a7df0",
-  ecc_04: "#e0a331",
-  ecc_05: "#d95f86",
-  ecc_06: "#2f9cb3",
-  ecc_07: "#c96f37",
-  ecc_08: "#6fbf73",
-  ecc_09: "#a66bd6",
-  ecc_10: "#e06f9f"
+  ecc_01: "#9ef1cd",
+  ecc_02: "#ff9b7f",
+  ecc_03: "#b3a8ff",
+  ecc_04: "#f2c76b",
+  ecc_05: "#ef91af",
+  ecc_06: "#86d6e5",
+  ecc_07: "#e5aa75",
+  ecc_08: "#a6e7aa",
+  ecc_09: "#caa0f0",
+  ecc_10: "#f0a2c1"
 };
 
 const patternWords = {
@@ -123,16 +123,16 @@ function arcPath(cx, cy, radius, startAngle, endAngle) {
 
 function nodeLayout(data) {
   const positions = [
-    [80, 74],
-    [204, 50],
-    [336, 78],
-    [462, 138],
-    [424, 266],
-    [298, 322],
-    [166, 304],
-    [70, 222],
-    [238, 184],
-    [354, 210]
+    [34, 26],
+    [208, 24],
+    [382, 26],
+    [34, 156],
+    [382, 156],
+    [34, 286],
+    [208, 288],
+    [382, 286],
+    [122, 418],
+    [294, 418]
   ];
   return new Map(
     data.ecc_profiles.map((profile, index) => [
@@ -141,7 +141,8 @@ function nodeLayout(data) {
         ...profile,
         x: positions[index]?.[0] || 240,
         y: positions[index]?.[1] || 180,
-        r: 10 + profile.population_share * 72,
+        width: 124 + profile.population_share * 150,
+        height: 90 + profile.population_share * 72,
         color: cohortPalette[profile.ecc_id] || "#9fb0c2"
       }
     ])
@@ -162,40 +163,68 @@ function notablePattern(profile) {
 function renderNodeGraph(data) {
   const nodes = nodeLayout(data);
   const edges = graphEdges(data);
+  const center = { x: 238, y: 235, width: 192, height: 58 };
+  const anchor = (node) => ({
+    x: node.x + node.width / 2,
+    y: node.y + node.height / 2
+  });
   return `
     <div class="node-graph-wrap">
-      <svg class="node-graph" viewBox="0 0 540 370" role="img" aria-label="ECC profile interaction graph">
+      <svg class="node-graph" viewBox="0 0 600 548" role="img" aria-label="ECC profile interaction graph">
         <defs>
-          <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
+          <marker id="lineDot" markerWidth="4" markerHeight="4" refX="2" refY="2">
+            <circle cx="2" cy="2" r="1.6" fill="#1f2329" />
+          </marker>
         </defs>
         ${edges
           .map((edge, index) => {
             const source = nodes.get(edge.source);
             const target = nodes.get(edge.target);
             if (!source || !target) return "";
-            const color = edge.character === "tension" ? "#d95f86" : source.color;
-            const width = 1.2 + edge.intensity * 4.2;
+            const sourceAnchor = anchor(source);
+            const targetAnchor = anchor(target);
+            const color = edge.character === "tension" ? "#1f2329" : "#6f767d";
+            const width = 0.8 + edge.intensity * 2.2;
             const duration = (4.2 - edge.intensity * 1.7).toFixed(2);
+            const midY = (sourceAnchor.y + targetAnchor.y) / 2;
             return `
-              <line class="graph-edge ${edge.character}" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" stroke="${color}" stroke-width="${width.toFixed(2)}" style="animation-duration:${duration}s; animation-delay:${(index * 0.18).toFixed(2)}s" />
+              <path class="graph-edge ${edge.character}" d="M ${sourceAnchor.x.toFixed(1)} ${sourceAnchor.y.toFixed(1)} C ${sourceAnchor.x.toFixed(1)} ${midY.toFixed(1)}, ${targetAnchor.x.toFixed(1)} ${midY.toFixed(1)}, ${targetAnchor.x.toFixed(1)} ${targetAnchor.y.toFixed(1)}" stroke="${color}" stroke-width="${width.toFixed(2)}" style="animation-duration:${duration}s; animation-delay:${(index * 0.18).toFixed(2)}s" />
             `;
           })
           .join("")}
         ${[...nodes.values()]
+          .map((node, index) => {
+            const a = anchor(node);
+            const centerX = center.x + center.width / 2;
+            const centerY = center.y + center.height / 2;
+            const bendY = (a.y + centerY) / 2;
+            return `<path class="ontology-link" d="M ${centerX.toFixed(1)} ${centerY.toFixed(1)} C ${centerX.toFixed(1)} ${bendY.toFixed(1)}, ${a.x.toFixed(1)} ${bendY.toFixed(1)}, ${a.x.toFixed(1)} ${a.y.toFixed(1)}" style="animation-delay:${(index * 0.1).toFixed(2)}s" />`;
+          })
+          .join("")}
+        <foreignObject x="${center.x}" y="${center.y}" width="${center.width}" height="${center.height}">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="ontology-card">
+            <span>Civic Ontology</span>
+            <i></i>
+          </div>
+        </foreignObject>
+        ${[...nodes.values()]
           .map(
             (node, index) => {
               const metrics = node.current_relationships;
-              const tooltipX = node.x > 360 ? node.x - 178 : node.x + 22;
-              const tooltipY = node.y > 220 ? node.y - 132 : node.y - 20;
+              const tooltipX = node.x > 330 ? node.x - 24 : node.x + 34;
+              const tooltipY = node.y > 320 ? node.y - 112 : node.y + 46;
+              const cardTitle = node.label.replace("Economically Insecure ", "Econ. Insecure ").replace("Reciprocity-Sensitive ", "Reciprocity ").replace("Marginalized ", "Marg. ");
               return `
               <g class="graph-node" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
-                <circle cx="${node.x}" cy="${node.y}" r="${(node.r + 5).toFixed(1)}" fill="${node.color}" opacity="0.12" />
-                <circle cx="${node.x}" cy="${node.y}" r="${node.r.toFixed(1)}" fill="${node.color}" filter="url(#softGlow)" />
-                <text x="${node.x}" y="${node.y + node.r + 16}" text-anchor="middle">${node.ecc_id.replace("ecc_", "ECC ")}</text>
-                <foreignObject class="node-tooltip" x="${tooltipX}" y="${tooltipY}" width="168" height="128">
+                <foreignObject class="system-node" x="${node.x}" y="${node.y}" width="${node.width.toFixed(1)}" height="${node.height.toFixed(1)}">
+                  <div xmlns="http://www.w3.org/1999/xhtml" class="system-card" style="--cohort:${node.color}">
+                    <div class="system-card-head"><span class="role-mark"></span><strong>${cardTitle}</strong></div>
+                    <div class="system-card-body">
+                      <span></span><span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                  </div>
+                </foreignObject>
+                <foreignObject class="node-tooltip" x="${tooltipX}" y="${tooltipY}" width="184" height="136">
                   <div xmlns="http://www.w3.org/1999/xhtml" class="node-card">
                     <strong>${node.label}</strong>
                     <span>Share ${pct(node.population_share)}</span>

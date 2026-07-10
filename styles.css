@@ -16,8 +16,8 @@
   --violet: #8a7df0;
   --gold: #a97016;
   --shadow: 0 16px 36px rgba(16, 47, 78, 0.09);
-  --display-font: Fraunces, Georgia, "Times New Roman", serif;
-  --body-font: "Public Sans", Inter, "Segoe UI", Arial, sans-serif;
+  --display-font: "Helvetica Neue", Inter, "Segoe UI", Arial, sans-serif;
+  --body-font: "Helvetica Neue", Inter, "Segoe UI", Arial, sans-serif;
 }
 
 * {
@@ -47,9 +47,9 @@ button {
 }
 
 .topbar {
-  background: linear-gradient(90deg, #0d2742 0%, #153b5f 54%, #204c68 100%);
+  background: #1f2329;
   color: #fff;
-  border-bottom: 4px solid #b8862f;
+  border-bottom: 4px solid #9ef1cd;
 }
 
 .topbar-inner {
@@ -94,7 +94,7 @@ h1 {
   line-height: 1.02;
   letter-spacing: 0;
   font-family: var(--display-font);
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .lede {
@@ -205,7 +205,7 @@ h1 {
   font-size: 18px;
   letter-spacing: 0;
   font-family: var(--display-font);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .overview-hero {
@@ -214,7 +214,7 @@ h1 {
   background:
     linear-gradient(90deg, rgba(24, 70, 205, 0.09) 0 1px, transparent 1px 100%),
     linear-gradient(0deg, rgba(24, 70, 205, 0.07) 0 1px, transparent 1px 100%),
-    radial-gradient(circle at 16% 36%, rgba(47, 95, 215, 0.18), transparent 18%),
+    linear-gradient(135deg, transparent 0 68%, rgba(31, 35, 41, 0.06) 68.1% 68.4%, transparent 68.5%),
     #fbfbf8;
   background-size: 18px 18px, 18px 18px, auto, auto;
   color: #111820;
@@ -277,15 +277,15 @@ h1 {
 .graph-panel h3,
 .risk-panel h3 {
   font-family: var(--display-font);
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0;
 }
 
 .hero-copy h2 {
-  max-width: 760px;
+  max-width: 850px;
   color: #0d1117;
-  font-size: clamp(28px, 3.3vw, 46px);
-  line-height: 1.12;
+  font-size: clamp(42px, 5.2vw, 82px);
+  line-height: 0.95;
   margin: 0 auto;
 }
 
@@ -308,7 +308,7 @@ h1 {
 .graph-panel,
 .risk-panel,
 .dark-panel {
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.86);
   border-color: rgba(189, 199, 210, 0.9);
   color: #17202a;
   backdrop-filter: blur(5px);
@@ -331,7 +331,7 @@ h1 {
 .risk-panel h3 {
   color: #111820;
   margin: 0;
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .graph-panel p {
@@ -346,8 +346,8 @@ h1 {
 
 .node-graph {
   width: 100%;
-  height: min(48vw, 390px);
-  min-height: 290px;
+  height: min(78vw, 640px);
+  min-height: 520px;
   display: block;
   background:
     linear-gradient(90deg, rgba(24, 70, 205, 0.07) 0 1px, transparent 1px 100%),
@@ -358,34 +358,117 @@ h1 {
 }
 
 .graph-edge {
+  fill: none;
   stroke-linecap: round;
-  opacity: 0.36;
-  mix-blend-mode: multiply;
+  opacity: 0.34;
   animation: edgePulse 3s ease-in-out infinite;
 }
 
 .graph-edge.tension {
-  stroke-dasharray: 7 8;
+  stroke-dasharray: 6 8;
+}
+
+.ontology-link {
+  fill: none;
+  stroke: #747b82;
+  stroke-width: 1.1;
+  opacity: 0.44;
+  animation: edgePulse 4.2s ease-in-out infinite;
 }
 
 .graph-node {
-  animation: nodePulse 3.4s ease-in-out infinite;
-  transform-box: fill-box;
-  transform-origin: center;
   cursor: pointer;
 }
 
-.graph-node text {
-  fill: #465362;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+.system-node {
+  overflow: visible;
 }
 
-.graph-node circle:nth-of-type(2) {
-  stroke: color-mix(in srgb, var(--cohort), #0d1117 28%);
-  stroke-width: 1.5;
-  fill-opacity: 0.32;
+.system-card {
+  width: 100%;
+  height: 100%;
+  border: 1.35px solid #20252b;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.94);
+  overflow: hidden;
+  box-shadow: 0 7px 16px rgba(31, 35, 41, 0.08);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.graph-node:hover .system-card,
+.graph-node:focus .system-card {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(31, 35, 41, 0.16);
+}
+
+.system-card-head {
+  height: 29px;
+  background: var(--cohort);
+  border-bottom: 1.35px solid #20252b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 8px;
+  color: #20252b;
+  text-transform: uppercase;
+}
+
+.system-card-head strong {
+  font-size: 9.4px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-mark {
+  position: relative;
+  width: 16px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.role-mark::before,
+.role-mark::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1.2px solid #20252b;
+}
+
+.role-mark::before {
+  top: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f8faf7;
+}
+
+.role-mark::after {
+  top: 9px;
+  width: 13px;
+  height: 8px;
+  border-radius: 50% 50% 2px 2px;
+  background: repeating-linear-gradient(135deg, #f8faf7 0 3px, #d8dde2 3px 4px);
+}
+
+.system-card-body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 12px 13px;
+}
+
+.system-card-body span {
+  height: 19px;
+  border: 1px solid #4d5358;
+  background:
+    radial-gradient(circle at 18% 45%, var(--cohort) 0 3px, transparent 3.4px),
+    linear-gradient(90deg, transparent 0 34%, rgba(32, 37, 43, 0.22) 34.5% 36%, transparent 36.5%),
+    #fff;
 }
 
 .node-tooltip {
@@ -475,6 +558,45 @@ h1 {
   50% {
     transform: scale(1.04);
   }
+}
+
+.ontology-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: #1f2329;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  box-shadow: 0 16px 30px rgba(31, 35, 41, 0.18);
+}
+
+.ontology-card span {
+  font-size: 31px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.ontology-card i {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  position: relative;
+}
+
+.ontology-card i::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  bottom: -8px;
+  width: 8px;
+  height: 8px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
 }
 
 .risk-panel {
