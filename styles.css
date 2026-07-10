@@ -488,6 +488,48 @@ h1 {
   transform: translateY(0);
 }
 
+.node-graph:has(.graph-node[data-node="ecc_01"]:hover) .node-tooltip[data-tooltip="ecc_01"],
+.node-graph:has(.graph-node[data-node="ecc_01"]:focus) .node-tooltip[data-tooltip="ecc_01"],
+.node-graph:has(.graph-node[data-node="ecc_02"]:hover) .node-tooltip[data-tooltip="ecc_02"],
+.node-graph:has(.graph-node[data-node="ecc_02"]:focus) .node-tooltip[data-tooltip="ecc_02"],
+.node-graph:has(.graph-node[data-node="ecc_03"]:hover) .node-tooltip[data-tooltip="ecc_03"],
+.node-graph:has(.graph-node[data-node="ecc_03"]:focus) .node-tooltip[data-tooltip="ecc_03"],
+.node-graph:has(.graph-node[data-node="ecc_04"]:hover) .node-tooltip[data-tooltip="ecc_04"],
+.node-graph:has(.graph-node[data-node="ecc_04"]:focus) .node-tooltip[data-tooltip="ecc_04"],
+.node-graph:has(.graph-node[data-node="ecc_05"]:hover) .node-tooltip[data-tooltip="ecc_05"],
+.node-graph:has(.graph-node[data-node="ecc_05"]:focus) .node-tooltip[data-tooltip="ecc_05"],
+.node-graph:has(.graph-node[data-node="ecc_06"]:hover) .node-tooltip[data-tooltip="ecc_06"],
+.node-graph:has(.graph-node[data-node="ecc_06"]:focus) .node-tooltip[data-tooltip="ecc_06"],
+.node-graph:has(.graph-node[data-node="ecc_07"]:hover) .node-tooltip[data-tooltip="ecc_07"],
+.node-graph:has(.graph-node[data-node="ecc_07"]:focus) .node-tooltip[data-tooltip="ecc_07"],
+.node-graph:has(.graph-node[data-node="ecc_08"]:hover) .node-tooltip[data-tooltip="ecc_08"],
+.node-graph:has(.graph-node[data-node="ecc_08"]:focus) .node-tooltip[data-tooltip="ecc_08"],
+.node-graph:has(.graph-node[data-node="ecc_09"]:hover) .node-tooltip[data-tooltip="ecc_09"],
+.node-graph:has(.graph-node[data-node="ecc_09"]:focus) .node-tooltip[data-tooltip="ecc_09"],
+.node-graph:has(.graph-node[data-node="ecc_10"]:hover) .node-tooltip[data-tooltip="ecc_10"],
+.node-graph:has(.graph-node[data-node="ecc_10"]:focus) .node-tooltip[data-tooltip="ecc_10"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.node-graph[data-hover-node="ecc_01"] .node-tooltip[data-tooltip="ecc_01"],
+.node-graph[data-hover-node="ecc_02"] .node-tooltip[data-tooltip="ecc_02"],
+.node-graph[data-hover-node="ecc_03"] .node-tooltip[data-tooltip="ecc_03"],
+.node-graph[data-hover-node="ecc_04"] .node-tooltip[data-tooltip="ecc_04"],
+.node-graph[data-hover-node="ecc_05"] .node-tooltip[data-tooltip="ecc_05"],
+.node-graph[data-hover-node="ecc_06"] .node-tooltip[data-tooltip="ecc_06"],
+.node-graph[data-hover-node="ecc_07"] .node-tooltip[data-tooltip="ecc_07"],
+.node-graph[data-hover-node="ecc_08"] .node-tooltip[data-tooltip="ecc_08"],
+.node-graph[data-hover-node="ecc_09"] .node-tooltip[data-tooltip="ecc_09"],
+.node-graph[data-hover-node="ecc_10"] .node-tooltip[data-tooltip="ecc_10"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tooltip-layer {
+  pointer-events: none;
+}
+
 .node-card {
   min-height: 116px;
   border: 1px solid rgba(162, 174, 190, 0.85);
@@ -585,6 +627,7 @@ h1 {
   box-shadow: 0 16px 30px rgba(31, 35, 41, 0.18);
   position: relative;
   z-index: 2;
+  min-height: 100%;
 }
 
 .ontology-card span {
@@ -922,6 +965,41 @@ textarea {
   gap: 10px;
 }
 
+.prompt-bank {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.prompt-chip {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  padding: 10px 11px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.35;
+  min-height: 62px;
+}
+
+.prompt-chip:hover {
+  background: #effff7;
+}
+
+.effect-summary {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(158, 241, 205, 0.32), transparent 42%),
+    #fff;
+  color: #30363c;
+  padding: 12px 13px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .alert {
   border: 1px solid #dcc9a8;
   border-left: 4px solid var(--gold);
@@ -1116,6 +1194,10 @@ textarea {
 
   select {
     min-width: 100%;
+  }
+
+  .prompt-bank {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -6,6 +6,7 @@ const state = {
   view: "overview",
   selectedProfile: "ecc_01",
   selectedIntervention: "int_02",
+  interventionText: "A news segment claims hidden motives are driving a public agency decision and urges citizens to withhold trust until officials prove otherwise.",
   draft:
     "This adjustment is a necessary fiscal correction. The ministry has decided the change will apply equally to everyone through established protocol.",
   rehearsalLog: [],
@@ -41,6 +42,32 @@ const patternWords = {
   top_down_directive: ["must comply", "directive", "ordered", "mandated by office"],
   public_blame_framing: ["because people failed", "misuse", "irresponsible", "their behavior", "blame"],
   equality_without_equity_signal: ["applies equally", "same for everyone", "uniformly applied", "no exceptions"]
+};
+
+const interventionPrompts = [
+  "A new audit rule gives enforcement teams stronger authority to inspect procurement records across agencies.",
+  "A household support payment is reduced to close a fiscal shortfall during a budget correction.",
+  "Officials publish decision records, timelines, and appeal routes for a public licensing process.",
+  "The head of government changes with little public preparation or advance explanation.",
+  "Several department heads are reassigned after an internal review of administrative performance.",
+  "A regulatory body is merged with another department and its procedures are rewritten.",
+  "A news segment claims hidden motives are driving a public agency decision and urges citizens to withhold trust until officials prove otherwise.",
+  "Coverage highlights verified follow-through, published timelines, and public accountability checks.",
+  "Prices rise sharply after a broad economic contraction affects household income.",
+  "A service shortfall announcement implies affected users caused the problem through misuse."
+];
+
+const interventionKeywords = {
+  int_01: ["audit", "corruption", "enforcement", "inspect", "procurement", "authority"],
+  int_02: ["subsidy", "support payment", "household", "reduced", "reduction", "fiscal", "shortfall"],
+  int_03: ["publish", "records", "disclosure", "transparent", "timeline", "appeal", "licensing"],
+  int_04: ["head of government", "top executive", "prime minister", "president", "leadership changes"],
+  int_05: ["cabinet", "reshuffle", "department heads", "reassigned", "ministers"],
+  int_06: ["regulatory body", "merged", "restructured", "procedures rewritten", "department"],
+  int_07: ["hidden motives", "withhold trust", "failure", "distrust", "secret", "news segment"],
+  int_08: ["verified", "follow-through", "accountability", "public checks", "trust-building"],
+  int_09: ["prices", "economic contraction", "downturn", "income", "inflation", "shock"],
+  int_10: ["misuse", "blame", "caused the problem", "irresponsible", "fault", "shortfall announcement"]
 };
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
@@ -160,6 +187,50 @@ function notablePattern(profile) {
   return `High clarity: ${high.slice(0, 3).join(", ")}`;
 }
 
+function classifyIntervention(data, text) {
+  const lowerText = text.toLowerCase();
+  const scored = data.interventions.map((intervention) => {
+    const keywords = interventionKeywords[intervention.intervention_id] || [];
+    const keywordScore = keywords.reduce((score, keyword) => score + (lowerText.includes(keyword) ? 3 : 0), 0);
+    const labelWords = intervention.label.toLowerCase().split(/\W+/).filter((word) => word.length > 4);
+    const labelScore = labelWords.reduce((score, word) => score + (lowerText.includes(word) ? 1 : 0), 0);
+    const typeScore = lowerText.includes(intervention.type.replaceAll("_", " ")) ? 2 : 0;
+    return { intervention, score: keywordScore + labelScore + typeScore };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].score > 0 ? scored[0].intervention : data.interventions[0];
+}
+
+function effectSummary(data, intervention) {
+  const rows = data.ecc_profiles.map((profile) => interventionEffect(profile, intervention));
+  const avgTensionDelta = mean(rows.map((row) => row.tensionDelta));
+  const avgTranslationDelta = mean(rows.map((row) => row.translationDelta));
+  const elevated = rows.filter((row) => row.tensionDelta > 0.06 || row.translationDelta < -0.04).length;
+  const direction =
+    avgTensionDelta > 0.02
+      ? "raises average tension"
+      : avgTensionDelta < -0.02
+        ? "reduces average tension"
+        : "leaves average tension broadly stable";
+  const translation =
+    avgTranslationDelta > 0.02
+      ? "improves translation capacity"
+      : avgTranslationDelta < -0.02
+        ? "weakens translation capacity"
+        : "keeps translation capacity broadly stable";
+  return `Collectively, this scenario ${direction} and ${translation}. ${elevated} of ${rows.length} ECC profiles cross the higher-sensitivity threshold, so the table should be read as a profile-by-profile warning map rather than a single verdict.`;
+}
+
+function updateCategorizationPanel(data, text) {
+  const categorized = classifyIntervention(data, text);
+  const label = document.querySelector("#categoryLabel");
+  const dimension = document.querySelector("#categoryDimension");
+  const pattern = document.querySelector("#categoryPattern");
+  if (label) label.textContent = categorized.label;
+  if (dimension) dimension.textContent = dimensionLabels[categorized.primary_dimension];
+  if (pattern) pattern.textContent = categorized.risk_trigger_pattern ? titleCase(categorized.risk_trigger_pattern) : "no primary risk pattern";
+}
+
 function renderNodeGraph(data) {
   const nodes = nodeLayout(data);
   const edges = graphEdges(data);
@@ -170,7 +241,7 @@ function renderNodeGraph(data) {
   });
   return `
     <div class="node-graph-wrap">
-      <svg class="node-graph" viewBox="0 0 804 704" role="img" aria-label="ECC profile interaction graph">
+      <svg class="node-graph" data-hover-node="" viewBox="0 0 804 704" role="img" aria-label="ECC profile interaction graph">
         <defs>
           <marker id="lineDot" markerWidth="4" markerHeight="4" refX="2" refY="2">
             <circle cx="2" cy="2" r="1.6" fill="#1f2329" />
@@ -202,20 +273,15 @@ function renderNodeGraph(data) {
           })
           .join("")}
         <foreignObject x="${center.x}" y="${center.y}" width="${center.width}" height="${center.height}">
-          <div xmlns="http://www.w3.org/1999/xhtml" class="ontology-card">
-            <span>Civic Ontology</span>
-            <i></i>
-          </div>
+          <div xmlns="http://www.w3.org/1999/xhtml" class="ontology-card"></div>
         </foreignObject>
         ${[...nodes.values()]
           .map(
             (node, index) => {
               const metrics = node.current_relationships;
-              const tooltipX = node.x > 500 ? node.x - 4 : node.x + 40;
-              const tooltipY = node.y > 480 ? node.y - 110 : node.y + 58;
               const cardTitle = node.label.replace("Economically Insecure ", "Econ. Insecure ").replace("Reciprocity-Sensitive ", "Reciprocity ").replace("Marginalized ", "Marg. ");
               return `
-              <g class="graph-node" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
+              <g class="graph-node" data-node="${node.ecc_id}" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
                 <foreignObject class="system-node" x="${node.x}" y="${node.y}" width="${node.width.toFixed(1)}" height="${node.height.toFixed(1)}">
                   <div xmlns="http://www.w3.org/1999/xhtml" class="system-card" style="--cohort:${node.color}">
                     <div class="system-card-head"><span class="role-mark"></span><strong>${cardTitle}</strong></div>
@@ -224,7 +290,19 @@ function renderNodeGraph(data) {
                     </div>
                   </div>
                 </foreignObject>
-                <foreignObject class="node-tooltip" x="${tooltipX}" y="${tooltipY}" width="184" height="136">
+              </g>
+            `;
+            }
+          )
+          .join("")}
+        <g class="tooltip-layer">
+          ${[...nodes.values()]
+            .map((node) => {
+              const metrics = node.current_relationships;
+              const tooltipX = node.x > 500 ? node.x - 4 : node.x + 40;
+              const tooltipY = node.y > 480 ? node.y - 110 : node.y + 58;
+              return `
+                <foreignObject class="node-tooltip tooltip-${node.ecc_id}" data-tooltip="${node.ecc_id}" x="${tooltipX}" y="${tooltipY}" width="184" height="136">
                   <div xmlns="http://www.w3.org/1999/xhtml" class="node-card">
                     <strong>${node.label}</strong>
                     <span>Share ${pct(node.population_share)}</span>
@@ -234,14 +312,13 @@ function renderNodeGraph(data) {
                     <em>Notable pattern: ${notablePattern(node)}</em>
                   </div>
                 </foreignObject>
-              </g>
-            `;
-            }
-          )
-          .join("")}
+              `;
+            })
+            .join("")}
+        </g>
       </svg>
       <div class="graph-legend">
-        <span>Node size = population share</span>
+        <span>Card color = ECC cohort hue</span>
         <span>Edge weight = interaction strength</span>
         <span>Rose edges = tension-character interaction</span>
       </div>
@@ -428,6 +505,17 @@ function renderOverview(data) {
       <div class="panel" style="margin-top:18px">
         <div class="panel-header">
           <div>
+            <h2 class="panel-title">ECC Interaction Field</h2>
+            <p class="panel-subtitle">The same node-based relationship field used in the Overview, included here to keep CCC gaps tied to profile interactions.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          ${renderNodeGraph(data)}
+        </div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-header">
+          <div>
             <h2 class="panel-title">Stakeholder Profile Register</h2>
             <p class="panel-subtitle">Population share and current relationship measurements from local fixture data.</p>
           </div>
@@ -524,6 +612,7 @@ function renderExplorer(data) {
 }
 
 function renderSandbox(data) {
+  const categorized = classifyIntervention(data, state.interventionText);
   const intervention = data.interventions.find((item) => item.intervention_id === state.selectedIntervention);
   const rows = interventionResults(data);
   const rehearsal = rehearsalPreview(data);
@@ -534,16 +623,26 @@ function renderSandbox(data) {
           <div class="panel-header">
             <div>
               <h2 class="panel-title">Intervention Sandbox</h2>
-              <p class="panel-subtitle">Load a local intervention and preview its effect on each ECC profile.</p>
+              <p class="panel-subtitle">Type an intervention, review its local category warning, then press Simulate to update the profile preview.</p>
             </div>
           </div>
           <div class="panel-body">
-            <div class="selector-row">
-              <select id="interventionSelect" aria-label="Choose intervention">
-                ${data.interventions.map((item) => `<option value="${item.intervention_id}" ${item.intervention_id === intervention.intervention_id ? "selected" : ""}>${item.label}</option>`).join("")}
-              </select>
+            <textarea id="interventionText" aria-label="Describe intervention">${state.interventionText}</textarea>
+            <div class="selector-row" style="margin-top:12px">
+              <button class="primary-action" data-action="simulateIntervention">Simulate</button>
+              <button class="secondary-action" data-action="shuffleIntervention">Load another sample</button>
             </div>
-            <h3 class="section-heading" style="margin-top:20px">${intervention.label}</h3>
+            <h3 class="section-heading" style="margin-top:20px">Categorization warning</h3>
+            <div class="notice">
+              Current text is categorized as <strong id="categoryLabel">${categorized.label}</strong>. If simulated, the model will use the <span id="categoryDimension">${dimensionLabels[categorized.primary_dimension]}</span> dimension and the <span id="categoryPattern">${categorized.risk_trigger_pattern ? titleCase(categorized.risk_trigger_pattern) : "no primary risk pattern"}</span> warning pattern.
+            </div>
+            <h3 class="section-heading" style="margin-top:20px">Sample intervention text</h3>
+            <div class="prompt-bank">
+              ${interventionPrompts
+                .map((prompt, index) => `<button class="prompt-chip" data-action="useInterventionPrompt" data-index="${index}">${prompt}</button>`)
+                .join("")}
+            </div>
+            <h3 class="section-heading" style="margin-top:20px">Active simulation: ${intervention.label}</h3>
             <p class="small">${intervention.description}</p>
             <div class="chip-row" style="margin-top:12px">
               <span class="chip">${titleCase(intervention.type)}</span>
@@ -573,6 +672,7 @@ function renderSandbox(data) {
           </div>
         </div>
         <div class="panel-body table-wrap">
+          <div class="effect-summary">${effectSummary(data, intervention)}</div>
           <table>
             <thead><tr><th>Stakeholder group</th><th>Overlap</th><th>Tension</th><th>Translation</th><th>Dimension trigger</th></tr></thead>
             <tbody>
@@ -869,6 +969,23 @@ function wireEvents(data) {
         renderShell(data);
       }
     }
+    if (action === "useInterventionPrompt") {
+      const index = Number(target.getAttribute("data-index"));
+      state.interventionText = interventionPrompts[index] || state.interventionText;
+      renderShell(data);
+    }
+    if (action === "shuffleIntervention") {
+      const currentIndex = interventionPrompts.indexOf(state.interventionText);
+      const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % interventionPrompts.length : 0;
+      state.interventionText = interventionPrompts[nextIndex];
+      renderShell(data);
+    }
+    if (action === "simulateIntervention") {
+      const text = document.querySelector("#interventionText")?.value || state.interventionText;
+      state.interventionText = text;
+      state.selectedIntervention = classifyIntervention(data, text).intervention_id;
+      renderShell(data);
+    }
     if (action === "saveScenario") {
       const aggregate = interventionAggregate(data);
       state.scenarioLog.unshift({
@@ -882,17 +999,42 @@ function wireEvents(data) {
     }
   });
 
-  app.addEventListener("change", (event) => {
-    if (event.target.id === "interventionSelect") {
-      state.selectedIntervention = event.target.value;
-      renderShell(data);
-    }
-  });
-
   app.addEventListener("input", (event) => {
     if (event.target.id === "draftText") {
       state.draft = event.target.value;
     }
+    if (event.target.id === "interventionText") {
+      state.interventionText = event.target.value;
+      updateCategorizationPanel(data, state.interventionText);
+    }
+  });
+
+  app.addEventListener("mouseover", (event) => {
+    const node = event.target.closest(".graph-node");
+    if (!node) return;
+    const graph = node.closest(".node-graph");
+    if (graph) graph.setAttribute("data-hover-node", node.getAttribute("data-node"));
+  });
+
+  app.addEventListener("mouseout", (event) => {
+    const node = event.target.closest(".graph-node");
+    if (!node) return;
+    const graph = node.closest(".node-graph");
+    if (graph) graph.setAttribute("data-hover-node", "");
+  });
+
+  app.addEventListener("focusin", (event) => {
+    const node = event.target.closest(".graph-node");
+    if (!node) return;
+    const graph = node.closest(".node-graph");
+    if (graph) graph.setAttribute("data-hover-node", node.getAttribute("data-node"));
+  });
+
+  app.addEventListener("focusout", (event) => {
+    const node = event.target.closest(".graph-node");
+    if (!node) return;
+    const graph = node.closest(".node-graph");
+    if (graph) graph.setAttribute("data-hover-node", "");
   });
 }
 
