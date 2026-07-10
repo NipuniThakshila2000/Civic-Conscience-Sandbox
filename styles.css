@@ -1115,6 +1115,60 @@ textarea {
   line-height: 1.5;
 }
 
+.howto-flow {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto minmax(140px, 1fr) auto minmax(140px, 1fr) auto minmax(140px, 1fr) auto minmax(140px, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.howto-step {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(158, 241, 205, 0.34), transparent 56%),
+    #fff;
+  padding: 13px;
+  min-height: 138px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: #1f2329;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.howto-step strong {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.howto-step span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.step-arrow {
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 400;
+  padding: 0 2px;
+}
+
 @media (max-width: 1040px) {
   .grid.two,
   .grid.three,
@@ -1127,6 +1181,15 @@ textarea {
   .dimension-matrix,
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .howto-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .step-arrow {
+    transform: rotate(90deg);
+    min-height: 22px;
   }
 }
 

@@ -459,6 +459,17 @@ function renderOverview(data) {
           </div>
         </div>
       </div>
+      <div class="panel howto-panel" style="margin-bottom:18px">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">How to use</h2>
+            <p class="panel-subtitle">Follow the civic relationship workflow from profile reading to scenario comparison.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          ${renderHowToFlow()}
+        </div>
+      </div>
       <div class="grid three">
         ${renderMetric("Overlap condition", aggregate.overlap, `Ideal reference ${pct(data.ideal_condition.overlap_target)}`)}
         ${renderMetric("Tension condition", aggregate.tension, `Maximum reference ${pct(data.ideal_condition.tension_target_max)}`, "tension")}
@@ -503,6 +514,32 @@ function renderOverview(data) {
         </div>
       </div>
     </section>
+  `;
+}
+
+function renderHowToFlow() {
+  const steps = [
+    ["1", "Read ECC profiles", "Inspect stakeholder language across Justice, Process, Dignity, Dishonour, Authority, and Trust."],
+    ["2", "Check interaction field", "Use the node diagram to see how profile relationships are connected or tense."],
+    ["3", "Type intervention", "Enter a proposed action in the Sandbox and review its category warning."],
+    ["4", "Simulate effects", "Press Simulate to update profile-level Overlap, Tension, and Translation effects."],
+    ["5", "Compare CCC gap", "Review dashboard gaps and save scenario entries for comparison."]
+  ];
+  return `
+    <div class="howto-flow">
+      ${steps
+        .map(
+          ([number, title, text], index) => `
+            <div class="howto-step">
+              <div class="step-number">${number}</div>
+              <strong>${title}</strong>
+              <span>${text}</span>
+            </div>
+            ${index < steps.length - 1 ? `<div class="step-arrow" aria-hidden="true">→</div>` : ""}
+          `
+        )
+        .join("")}
+    </div>
   `;
 }
 
