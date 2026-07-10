@@ -163,7 +163,7 @@ function notablePattern(profile) {
 function renderNodeGraph(data) {
   const nodes = nodeLayout(data);
   const edges = graphEdges(data);
-  const center = { x: 238, y: 235, width: 192, height: 58 };
+  const center = { x: 206, y: 232, width: 258, height: 64 };
   const anchor = (node) => ({
     x: node.x + node.width / 2,
     y: node.y + node.height / 2
