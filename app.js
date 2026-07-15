@@ -11,9 +11,36 @@ const state = {
     "This adjustment is a necessary fiscal correction. The ministry has decided the change will apply equally to everyone through established protocol.",
   rehearsalLog: [],
   scenarioLog: [],
+  builderRole: "reviewer",
+  customProfiles: [],
+  promotedCustomIds: [],
+  profileAudit: [],
+  builderStatus: "",
+  builderForm: {
+    religion: "aggregate",
+    caste: "aggregate",
+    creed: "aggregate",
+    language: "aggregate",
+    location: "aggregate",
+    marital_status: "aggregate",
+    dimensions: {
+      justice: "medium",
+      process: "medium",
+      dignity: "medium",
+      dishonour: "medium",
+      authority: "medium",
+      trust: "medium"
+    }
+  },
+  interactionProfiles: ["ecc_01", "ecc_05"],
+  interactionType: "policy_rollout",
+  evidenceStatus: "Use Retrieve historical precedents after selecting profiles and a situation type.",
   tourActive: false,
   tourStep: 0
 };
+
+const MIN_POPULATION_SHARE = 0.025;
+const REVIEWER_ROLES = new Set(["reviewer", "senior_reviewer"]);
 
 const dimensionLabels = {
   justice: "Justice",
@@ -23,6 +50,118 @@ const dimensionLabels = {
   authority: "Authority",
   trust: "Trust"
 };
+
+const populationAttributes = {
+  religion: ["Aggregate", "Multi-faith civic mix", "Minority faith cluster", "No dominant affiliation"],
+  caste: ["Aggregate", "Cross-caste mix", "Status-sensitive mix", "Low salience / not coded"],
+  creed: ["Aggregate", "Proceduralist", "Restorative", "Skeptical"],
+  language: ["Aggregate", "Multilingual", "Local-language dominant", "Institution-language dominant"],
+  location: ["Aggregate", "Urban", "Peri-urban", "Rural", "Service corridor"],
+  marital_status: ["Aggregate", "Mixed household status", "Married household cluster", "Single / youth-heavy cluster"]
+};
+
+const attributeShareFactors = {
+  aggregate: 1,
+  "multi-faith civic mix": 0.78,
+  "minority faith cluster": 0.42,
+  "no dominant affiliation": 0.62,
+  "cross-caste mix": 0.74,
+  "status-sensitive mix": 0.52,
+  "low salience / not coded": 0.86,
+  proceduralist: 0.76,
+  restorative: 0.68,
+  skeptical: 0.58,
+  multilingual: 0.72,
+  "local-language dominant": 0.66,
+  "institution-language dominant": 0.69,
+  urban: 0.72,
+  "peri-urban": 0.56,
+  rural: 0.58,
+  "service corridor": 0.44,
+  "mixed household status": 0.82,
+  "married household cluster": 0.70,
+  "single / youth-heavy cluster": 0.54
+};
+
+const situationTypes = {
+  shared_public_event: {
+    label: "Shared public event",
+    weights: { dignity: 0.22, dishonour: 0.22, trust: 0.18, authority: 0.14, justice: 0.12, process: 0.12 }
+  },
+  policy_rollout: {
+    label: "Policy rollout",
+    weights: { process: 0.26, trust: 0.22, justice: 0.18, authority: 0.16, dignity: 0.12, dishonour: 0.06 }
+  },
+  resource_location_dispute: {
+    label: "Resource/location dispute",
+    weights: { justice: 0.25, dignity: 0.21, trust: 0.18, process: 0.16, authority: 0.12, dishonour: 0.08 }
+  },
+  service_co_location: {
+    label: "Service co-location",
+    weights: { dignity: 0.22, process: 0.22, trust: 0.2, authority: 0.14, justice: 0.14, dishonour: 0.08 }
+  },
+  media_narrative_exposure: {
+    label: "Media narrative exposure",
+    weights: { trust: 0.28, dishonour: 0.22, dignity: 0.18, authority: 0.14, justice: 0.1, process: 0.08 }
+  }
+};
+
+const historicalEvidence = [
+  {
+    type: "shared_public_event",
+    dimensions: ["trust", "dishonour", "dignity"],
+    headline: "Shared public event followed by rumor circulation and public-order stress",
+    source: "BBC News",
+    date: "2022-09-18",
+    url: "https://www.bbc.com/news/uk-england-leicestershire-62943952",
+    summary: "A public gathering and later circulation of claims created a pattern of trust, dignity, and dishonour pressure around a shared civic space."
+  },
+  {
+    type: "policy_rollout",
+    dimensions: ["process", "trust", "authority"],
+    headline: "Vaccine rollout coverage showed operational trust and process strain",
+    source: "Vanity Fair",
+    date: "2021-02-02",
+    url: "https://www.vanityfair.com/news/2021/02/how-the-covid-19-vaccine-rollout-was-hobbled",
+    summary: "Coverage of a large public-health rollout documented administrative coordination problems and trust effects without treating uptake as a single community forecast."
+  },
+  {
+    type: "policy_rollout",
+    dimensions: ["trust", "dignity", "process"],
+    headline: "Public-health rollout slowed where trust, access, and outreach gaps persisted",
+    source: "TIME",
+    date: "2021-03-17",
+    url: "https://time.com/5947967/israel-covid-vaccine-rollout/",
+    summary: "Reporting on a vaccination campaign described how access, trusted messengers, and public confidence affected participation."
+  },
+  {
+    type: "resource_location_dispute",
+    dimensions: ["justice", "trust", "authority"],
+    headline: "Economic scarcity and service disruption produced resource-pressure protests",
+    source: "The Guardian",
+    date: "2022-04-01",
+    url: "https://www.theguardian.com/world/2022/apr/01/sri-lanka-protesters-try-to-storm-presidents-house-as-economic-crisis-deepens",
+    summary: "Coverage of shortages and public protests is included as precedent for resource pressure patterns, not as an incident prediction."
+  },
+  {
+    type: "media_narrative_exposure",
+    dimensions: ["trust", "process", "dishonour"],
+    headline: "Mainstream coverage can be repurposed into misleading narrative frames",
+    source: "arXiv",
+    date: "2023-08-12",
+    url: "https://arxiv.org/abs/2308.06459",
+    summary: "Researchers found mainstream articles can be co-shared with misinformation narratives, relevant to trust and narrative-exposure analysis."
+  },
+  {
+    type: "media_narrative_exposure",
+    dimensions: ["trust", "authority", "dignity"],
+    headline: "Vaccine misinformation research mapped narrative exposure and trust effects",
+    source: "arXiv",
+    date: "2021-06-15",
+    url: "https://arxiv.org/abs/2106.08423",
+    summary: "A public research record on misinformation communities is used here as historical precedent for narrative exposure patterns."
+  }
+];
 
 const cohortPalette = {
   ecc_01: "#9ef1cd",
@@ -118,6 +257,7 @@ const tourSteps = [
 ];
 
 const clamp = (value) => Math.max(0, Math.min(1, value));
+const clampSigned = (value) => Math.max(-1, Math.min(1, value));
 const pct = (value) => `${Math.round(value * 100)}%`;
 const signed = (value) => `${value > 0 ? "+" : ""}${Math.round(value * 100)} pts`;
 const titleCase = (value) => value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
@@ -126,11 +266,28 @@ function mean(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function currentAggregate(data) {
+function reviewerCanBuild() {
+  return REVIEWER_ROLES.has(state.builderRole);
+}
+
+function promotedCustomProfiles() {
+  return state.customProfiles.filter((profile) => state.promotedCustomIds.includes(profile.ecc_id));
+}
+
+function analysisProfiles(data, includePromoted = false) {
+  return includePromoted ? [...data.ecc_profiles, ...promotedCustomProfiles()] : data.ecc_profiles;
+}
+
+function eligibleBuilderProfiles(data) {
+  return [...data.ecc_profiles, ...state.customProfiles].filter((profile) => profile.population_share >= MIN_POPULATION_SHARE);
+}
+
+function currentAggregate(data, includePromoted = false) {
+  const profiles = analysisProfiles(data, includePromoted);
   return {
-    overlap: mean(data.ecc_profiles.map((profile) => profile.current_relationships.overlap_score)),
-    tension: mean(data.ecc_profiles.map((profile) => profile.current_relationships.tension_score)),
-    translation: mean(data.ecc_profiles.map((profile) => profile.current_relationships.translation_capacity))
+    overlap: mean(profiles.map((profile) => profile.current_relationships.overlap_score)),
+    tension: mean(profiles.map((profile) => profile.current_relationships.tension_score)),
+    translation: mean(profiles.map((profile) => profile.current_relationships.translation_capacity))
   };
 }
 
@@ -139,6 +296,63 @@ function idealGap(data, values) {
     overlap: data.ideal_condition.overlap_target - values.overlap,
     tension: Math.max(0, values.tension - data.ideal_condition.tension_target_max),
     translation: data.ideal_condition.translation_target - values.translation
+  };
+}
+
+function dimensionScore(legibility) {
+  return { low: 0.2, medium: 0.55, high: 0.88 }[legibility] || 0.55;
+}
+
+function estimatePopulationShare(form = state.builderForm) {
+  const selected = Object.entries(form)
+    .filter(([key]) => key !== "dimensions")
+    .map(([, value]) => value);
+  const factor = selected.reduce((product, value) => product * (attributeShareFactors[value] || 1), 1);
+  return clamp(0.18 * factor);
+}
+
+function dimensionMeaning(key, legibility, attributes) {
+  const attributeText = Object.entries(attributes)
+    .filter(([, value]) => value !== "aggregate")
+    .map(([name, value]) => `${titleCase(name)}: ${titleCase(value)}`)
+    .join("; ");
+  const base = attributeText || "Aggregate reviewer-defined population segment";
+  return `${titleCase(legibility)} legibility for ${dimensionLabels[key].toLowerCase()} in a custom profile. ${base}.`;
+}
+
+function buildCustomProfileFromState() {
+  const attributes = Object.fromEntries(Object.entries(state.builderForm).filter(([key]) => key !== "dimensions"));
+  const dimensions = Object.fromEntries(
+    Object.entries(state.builderForm.dimensions).map(([key, legibility]) => [
+      key,
+      {
+        legibility,
+        meaning: dimensionMeaning(key, legibility, attributes)
+      }
+    ])
+  );
+  const populationShare = estimatePopulationShare();
+  const values = Object.values(state.builderForm.dimensions).map(dimensionScore);
+  const lowCount = Object.values(state.builderForm.dimensions).filter((value) => value === "low").length;
+  const highCount = Object.values(state.builderForm.dimensions).filter((value) => value === "high").length;
+  const labelParts = Object.entries(attributes)
+    .filter(([, value]) => value !== "aggregate")
+    .slice(0, 3)
+    .map(([, value]) => titleCase(value));
+  return {
+    ecc_id: `custom_${Date.now()}`,
+    label: labelParts.length ? `Custom: ${labelParts.join(" + ")}` : `Custom Aggregate Profile ${state.customProfiles.length + 1}`,
+    population_share: populationShare,
+    attributes,
+    dimensions,
+    current_relationships: {
+      overlap_score: clamp(mean(values) * 0.58 + 0.14),
+      tension_score: clamp(0.18 + lowCount * 0.055 - highCount * 0.018),
+      translation_capacity: clamp(mean(values) * 0.62 + 0.08)
+    },
+    risk_flags: [],
+    custom: true,
+    promoted: false
   };
 }
 
@@ -404,7 +618,7 @@ function interventionEffect(profile, intervention) {
 
 function interventionResults(data) {
   const intervention = data.interventions.find((item) => item.intervention_id === state.selectedIntervention);
-  return data.ecc_profiles.map((profile) => ({
+  return analysisProfiles(data, true).map((profile) => ({
     profile,
     intervention,
     result: interventionEffect(profile, intervention)
@@ -574,6 +788,302 @@ function renderProfileTable(data) {
           .join("")}
       </tbody>
     </table>
+  `;
+}
+
+function selectedInteractionProfiles(data) {
+  const profiles = eligibleBuilderProfiles(data);
+  return state.interactionProfiles.map((id) => profiles.find((profile) => profile.ecc_id === id)).filter(Boolean);
+}
+
+function interactionAnalysis(data) {
+  const profiles = selectedInteractionProfiles(data);
+  const situation = situationTypes[state.interactionType];
+  if (profiles.length < 2) return null;
+
+  const dimensionRows = Object.keys(dimensionLabels).map((dimension) => {
+    const scores = profiles.map((profile) => dimensionScore(profile.dimensions[dimension].legibility));
+    const spread = Math.max(...scores) - Math.min(...scores);
+    const lowCount = profiles.filter((profile) => profile.dimensions[dimension].legibility === "low").length;
+    const highCount = profiles.filter((profile) => profile.dimensions[dimension].legibility === "high").length;
+    const pressure = clamp(spread * (situation.weights[dimension] || 0.1) + lowCount * 0.035 + highCount * 0.01);
+    return {
+      dimension,
+      spread,
+      pressure,
+      lowCount,
+      highCount
+    };
+  });
+  const weightedPressure = clamp(dimensionRows.reduce((sum, row) => sum + row.pressure, 0));
+  const sharedHigh = dimensionRows.filter((row) => row.highCount === profiles.length).length;
+  const avg = {
+    overlap: mean(profiles.map((profile) => profile.current_relationships.overlap_score)),
+    tension: mean(profiles.map((profile) => profile.current_relationships.tension_score)),
+    translation: mean(profiles.map((profile) => profile.current_relationships.translation_capacity))
+  };
+  const shift = {
+    overlap: clampSigned(-weightedPressure * 0.22 + sharedHigh * 0.012),
+    tension: clamp(weightedPressure * 0.34),
+    translation: clampSigned(-weightedPressure * 0.26 + sharedHigh * 0.015)
+  };
+  const topDimensions = [...dimensionRows].sort((a, b) => b.pressure - a.pressure).slice(0, 3);
+  const strain = {
+    social: clamp(weightedPressure * 0.72 + topDimensions.some((row) => row.dimension === "dignity" || row.dimension === "dishonour") * 0.08),
+    economic: clamp(weightedPressure * 0.58 + topDimensions.some((row) => row.dimension === "justice") * 0.08),
+    institutional: clamp(weightedPressure * 0.68 + topDimensions.some((row) => row.dimension === "process" || row.dimension === "authority") * 0.09),
+    civic: clamp(weightedPressure * 0.64 + topDimensions.some((row) => row.dimension === "trust") * 0.1)
+  };
+  return { profiles, situation, dimensionRows, topDimensions, avg, shift, strain };
+}
+
+function evidenceMatches(data) {
+  const analysis = interactionAnalysis(data);
+  if (!analysis) return [];
+  const dimensions = new Set(analysis.topDimensions.map((row) => row.dimension));
+  return historicalEvidence
+    .map((item) => ({
+      ...item,
+      score: (item.type === state.interactionType ? 2 : 0) + item.dimensions.filter((dimension) => dimensions.has(dimension)).length
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
+}
+
+function renderDecisionSupportNotice(extra = "") {
+  return `<div class="notice decision-notice"><strong>Decision support only, requires human review.</strong> Outputs are pattern-level, aggregation-floor protected, and should not be read as specific-incident predictions.${extra ? ` ${extra}` : ""}</div>`;
+}
+
+function renderAttributeSelect(name, value, disabled) {
+  return `
+    <label class="builder-field">
+      <span>${titleCase(name)}</span>
+      <select data-action="builderAttribute" data-field="${name}" ${disabled ? "disabled" : ""}>
+        ${populationAttributes[name]
+          .map((option) => {
+            const normalized = option.toLowerCase();
+            return `<option value="${normalized}" ${value === normalized ? "selected" : ""}>${option}</option>`;
+          })
+          .join("")}
+      </select>
+    </label>
+  `;
+}
+
+function renderDimensionSelect(key, value, disabled) {
+  return `
+    <label class="builder-field compact-field">
+      <span>${dimensionLabels[key]}</span>
+      <select data-action="builderDimension" data-field="${key}" ${disabled ? "disabled" : ""}>
+        ${["low", "medium", "high"].map((level) => `<option value="${level}" ${value === level ? "selected" : ""}>${titleCase(level)}</option>`).join("")}
+      </select>
+    </label>
+  `;
+}
+
+function renderCustomProfileCard(profile) {
+  const promoted = state.promotedCustomIds.includes(profile.ecc_id);
+  return `
+    <div class="builder-card">
+      <div>
+        <strong>${profile.label}</strong>
+        <div class="small">Share ${pct(profile.population_share)} | O ${pct(profile.current_relationships.overlap_score)} | T ${pct(profile.current_relationships.tension_score)} | Tr ${pct(profile.current_relationships.translation_capacity)}</div>
+      </div>
+      <div class="chip-row">
+        ${Object.entries(profile.dimensions)
+          .map(([key, detail]) => `<span class="chip">${dimensionLabels[key]} ${titleCase(detail.legibility)}</span>`)
+          .join("")}
+      </div>
+      <button class="${promoted ? "secondary-action" : "primary-action"}" data-action="togglePromoteCustom" data-id="${profile.ecc_id}">
+        ${promoted ? "Promoted to main modules" : "Promote to main modules"}
+      </button>
+    </div>
+  `;
+}
+
+function renderInteractionReport(data) {
+  const analysis = interactionAnalysis(data);
+  if (!analysis) return `<div class="notice">Select at least two eligible profiles at or above the aggregation floor to generate a situational interaction report.</div>`;
+  return `
+    <div class="metric-grid">
+      ${renderMetric("Overlap shift", Math.abs(analysis.shift.overlap), `${signed(analysis.shift.overlap)} pattern movement`)}
+      ${renderMetric("Tension shift", analysis.shift.tension, `${signed(analysis.shift.tension)} pattern movement`, "tension")}
+      ${renderMetric("Translation shift", Math.abs(analysis.shift.translation), `${signed(analysis.shift.translation)} pattern movement`)}
+    </div>
+    <h3 class="section-heading" style="margin-top:20px">Dimension attribution</h3>
+    <div class="dimension-matrix">
+      ${analysis.topDimensions
+        .map(
+          (row) => `
+            <div class="dim-box">
+              <div class="dim-name">${dimensionLabels[row.dimension]}</div>
+              <div class="legibility ${row.pressure > 0.16 ? "low" : row.pressure > 0.09 ? "medium" : "high"}">${pct(row.pressure)} pressure</div>
+              <div class="dim-meaning">Spread ${pct(row.spread)} across selected profiles. Low-legibility count ${row.lowCount}; shared high-legibility count ${row.highCount}.</div>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+    <h3 class="section-heading" style="margin-top:20px">Strain Manifestation report</h3>
+    <div class="strain-grid">
+      ${Object.entries(analysis.strain)
+        .map(([band, value]) => `<div class="strain-band"><strong>${titleCase(band)}</strong><div class="bar ${band === "institutional" ? "tension" : ""}" style="--w:${pct(value)}"><span></span></div><span>${pct(value)} pattern strain</span></div>`)
+        .join("")}
+    </div>
+  `;
+}
+
+function renderEvidencePanel(data) {
+  const matches = evidenceMatches(data);
+  return `
+    ${renderDecisionSupportNotice("Historical precedent is retrieved as citation context only, without confidence scoring.")}
+    <div class="selector-row" style="margin-top:12px">
+      <button class="secondary-action" data-action="retrieveEvidence">Retrieve historical precedents</button>
+      <span class="small">${state.evidenceStatus}</span>
+    </div>
+    <div class="evidence-list">
+      ${
+        matches.length
+          ? matches
+              .map(
+                (item) => `
+                  <article class="evidence-item">
+                    <div class="evidence-date">${new Date(item.date).toLocaleDateString()}</div>
+                    <h3>${item.headline}</h3>
+                    <p>${item.summary}</p>
+                    <a href="${item.url}" target="_blank" rel="noreferrer">${item.source} source link</a>
+                  </article>
+                `
+              )
+              .join("")
+          : `<div class="notice">No sufficiently broad precedent is available for the current combination. Broaden the selected dimensions or situation type.</div>`
+      }
+    </div>
+  `;
+}
+
+function renderCommunityBuilder(data) {
+  const disabled = !reviewerCanBuild();
+  const estimatedShare = estimatePopulationShare();
+  const floorBlocked = estimatedShare < MIN_POPULATION_SHARE;
+  const profiles = eligibleBuilderProfiles(data);
+  return `
+    <section class="view active builder-view">
+      ${renderDecisionSupportNotice(`Minimum output share floor: ${pct(MIN_POPULATION_SHARE)}. Custom profiles remain separate until a reviewer explicitly promotes them.`)}
+      <div class="grid two" style="margin-top:18px">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Custom Community Builder</h2>
+              <p class="panel-subtitle">Reviewer-gated construction of custom ECC profiles using the preset library structure.</p>
+            </div>
+            <label class="role-picker">
+              <span>Role</span>
+              <select data-action="builderRole">
+                <option value="reviewer" ${state.builderRole === "reviewer" ? "selected" : ""}>Reviewer</option>
+                <option value="senior_reviewer" ${state.builderRole === "senior_reviewer" ? "selected" : ""}>Senior reviewer</option>
+                <option value="observer" ${state.builderRole === "observer" ? "selected" : ""}>Observer</option>
+              </select>
+            </label>
+          </div>
+          <div class="panel-body">
+            ${disabled ? `<div class="notice">Profile creation is locked until a defined reviewer role is selected.</div>` : ""}
+            <div class="builder-form">
+              ${Object.entries(populationAttributes).map(([name]) => renderAttributeSelect(name, state.builderForm[name], disabled)).join("")}
+            </div>
+            <h3 class="section-heading" style="margin-top:20px">Six ECC dimensions</h3>
+            <div class="builder-form dimension-form">
+              ${Object.entries(state.builderForm.dimensions).map(([key, value]) => renderDimensionSelect(key, value, disabled)).join("")}
+            </div>
+            <div class="floor-readout ${floorBlocked ? "blocked" : ""}">
+              Estimated population share: <strong>${pct(estimatedShare)}</strong>
+              <span>${floorBlocked ? `Below ${pct(MIN_POPULATION_SHARE)} floor. Broaden filters before creation.` : "Aggregation floor satisfied."}</span>
+            </div>
+            <div class="selector-row" style="margin-top:14px">
+              <button class="primary-action" data-action="createCustomProfile" ${disabled || floorBlocked ? "disabled" : ""}>Create custom profile</button>
+              <span class="small">${state.builderStatus}</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Separate Custom Profile Store</h2>
+              <p class="panel-subtitle">Profiles created here do not enter the preset ECC library or main modules unless promoted.</p>
+            </div>
+          </div>
+          <div class="panel-body custom-store">
+            ${state.customProfiles.length ? state.customProfiles.map(renderCustomProfileCard).join("") : `<div class="notice">No custom profiles have been created in this session.</div>`}
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Situational Interaction</h2>
+            <p class="panel-subtitle">Place two or more eligible profiles into a situation type and inspect pattern-level movement.</p>
+          </div>
+          <label class="role-picker">
+            <span>Situation</span>
+            <select data-action="interactionType">
+              ${Object.entries(situationTypes).map(([id, detail]) => `<option value="${id}" ${state.interactionType === id ? "selected" : ""}>${detail.label}</option>`).join("")}
+            </select>
+          </label>
+        </div>
+        <div class="panel-body">
+          <div class="profile-select-grid">
+            ${profiles
+              .map(
+                (profile) => `
+                  <label class="profile-check">
+                    <input type="checkbox" data-action="interactionProfile" value="${profile.ecc_id}" ${state.interactionProfiles.includes(profile.ecc_id) ? "checked" : ""} />
+                    <span><strong>${profile.label}</strong><em>${profile.custom ? "Custom" : "Preset"} | Share ${pct(profile.population_share)}</em></span>
+                  </label>
+                `
+              )
+              .join("")}
+          </div>
+          <div class="interaction-report" style="margin-top:18px">${renderInteractionReport(data)}</div>
+        </div>
+      </div>
+      <div class="grid two" style="margin-top:18px">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">News-Grounded Evidence</h2>
+              <p class="panel-subtitle">Public coverage and research links are shown as historical precedent, not forecasts.</p>
+            </div>
+          </div>
+          <div class="panel-body">${renderEvidencePanel(data)}</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Profile Creation Audit</h2>
+              <p class="panel-subtitle">Visible log of creator role, filters used, and timestamp for each created profile.</p>
+            </div>
+          </div>
+          <div class="panel-body audit-list">
+            ${
+              state.profileAudit.length
+                ? state.profileAudit
+                    .map(
+                      (entry) => `
+                        <div class="audit-item">
+                          <strong>${entry.profileLabel}</strong>
+                          <span>${new Date(entry.timestamp).toLocaleString()} by ${titleCase(entry.creator)}</span>
+                          <code>${entry.filters}</code>
+                        </div>
+                      `
+                    )
+                    .join("")
+                : `<div class="notice">No profile creation events have been logged.</div>`
+            }
+          </div>
+        </div>
+      </div>
+    </section>
   `;
 }
 
@@ -847,7 +1357,7 @@ function renderTrendItem(entry) {
 }
 
 function renderDashboard(data) {
-  const aggregate = currentAggregate(data);
+  const aggregate = currentAggregate(data, true);
   const gap = idealGap(data, aggregate);
   const intervention = interventionAggregate(data);
   const interventionGap = idealGap(data, intervention);
@@ -935,6 +1445,7 @@ function renderLog(data) {
   const scenarios = [...data.sample_scenario_log, ...state.scenarioLog];
   return `
     <section class="view active">
+      ${state.promotedCustomIds.length ? renderDecisionSupportNotice("This log includes reviewer-promoted custom profiles in saved local scenarios.") : ""}
       <div class="panel">
         <div class="panel-header">
           <div>
@@ -1001,6 +1512,7 @@ function renderShell(data) {
     ["overview", "Overview"],
     ["explorer", "ECC Profile Explorer"],
     ["sandbox", "Intervention Sandbox"],
+    ["builder", "Custom Community Builder"],
     ["dashboard", "CCC Dashboard"],
     ["log", "Scenario Comparison Log"]
   ];
@@ -1009,6 +1521,7 @@ function renderShell(data) {
     overview: renderOverview,
     explorer: renderExplorer,
     sandbox: renderSandbox,
+    builder: renderCommunityBuilder,
     dashboard: renderDashboard,
     log: renderLog
   }[state.view](data);
@@ -1120,8 +1633,90 @@ function wireEvents(data) {
         label: data.interventions.find((item) => item.intervention_id === state.selectedIntervention).label,
         timestamp: new Date().toISOString(),
         interventions_applied: [state.selectedIntervention],
+        custom_profiles_included: state.promotedCustomIds,
         ccc_gap: aggregate
       });
+      renderShell(data);
+    }
+    if (action === "createCustomProfile") {
+      if (!reviewerCanBuild()) {
+        state.builderStatus = "Creation blocked: reviewer role required.";
+        renderShell(data);
+        return;
+      }
+      const profile = buildCustomProfileFromState();
+      if (profile.population_share < MIN_POPULATION_SHARE) {
+        state.builderStatus = `Creation blocked: estimated share is below ${pct(MIN_POPULATION_SHARE)}.`;
+        renderShell(data);
+        return;
+      }
+      state.customProfiles.unshift(profile);
+      state.interactionProfiles = [...new Set([...state.interactionProfiles, profile.ecc_id])].slice(-4);
+      state.profileAudit.unshift({
+        profileId: profile.ecc_id,
+        profileLabel: profile.label,
+        creator: state.builderRole,
+        timestamp: new Date().toISOString(),
+        filters: Object.entries(profile.attributes)
+          .map(([key, value]) => `${key}=${value}`)
+          .join("; ")
+      });
+      state.builderStatus = `${profile.label} created in separate custom store.`;
+      renderShell(data);
+    }
+    if (action === "togglePromoteCustom") {
+      const id = target.getAttribute("data-id");
+      if (state.promotedCustomIds.includes(id)) {
+        state.promotedCustomIds = state.promotedCustomIds.filter((profileId) => profileId !== id);
+        state.builderStatus = "Custom profile removed from main module promotion list.";
+      } else {
+        state.promotedCustomIds.push(id);
+        state.builderStatus = "Custom profile promoted to Sandbox, CCC Dashboard, and Scenario Log calculations.";
+      }
+      renderShell(data);
+    }
+    if (action === "retrieveEvidence") {
+      const matches = evidenceMatches(data);
+      const analysis = interactionAnalysis(data);
+      state.evidenceStatus = analysis
+        ? `${matches.length} historical precedent item${matches.length === 1 ? "" : "s"} matched to ${situationTypes[state.interactionType].label.toLowerCase()} and current tension dimensions.`
+        : "Select at least two eligible profiles before retrieving historical precedents.";
+      renderShell(data);
+    }
+  });
+
+  app.addEventListener("change", (event) => {
+    const target = event.target.closest("[data-action]");
+    if (!target) return;
+    const action = target.getAttribute("data-action");
+    if (action === "builderRole") {
+      state.builderRole = target.value;
+      state.builderStatus = reviewerCanBuild() ? "Reviewer profile creation controls enabled." : "Observer role can inspect but not create custom profiles.";
+      renderShell(data);
+    }
+    if (action === "builderAttribute") {
+      state.builderForm[target.getAttribute("data-field")] = target.value;
+      state.builderStatus = "Draft filters updated; aggregation floor recalculated.";
+      renderShell(data);
+    }
+    if (action === "builderDimension") {
+      state.builderForm.dimensions[target.getAttribute("data-field")] = target.value;
+      state.builderStatus = "Draft ECC dimensions updated.";
+      renderShell(data);
+    }
+    if (action === "interactionType") {
+      state.interactionType = target.value;
+      state.evidenceStatus = "Situation changed; retrieve historical precedents to refresh citation context.";
+      renderShell(data);
+    }
+    if (action === "interactionProfile") {
+      const id = target.value;
+      if (target.checked) {
+        state.interactionProfiles = [...new Set([...state.interactionProfiles, id])];
+      } else {
+        state.interactionProfiles = state.interactionProfiles.filter((profileId) => profileId !== id);
+      }
+      state.evidenceStatus = "Profile selection changed; retrieve historical precedents to refresh citation context.";
       renderShell(data);
     }
   });
