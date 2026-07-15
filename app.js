@@ -320,7 +320,7 @@ function dimensionMeaning(key, legibility, attributes) {
   return `${titleCase(legibility)} legibility for ${dimensionLabels[key].toLowerCase()} in a custom profile. ${base}.`;
 }
 
-function buildCustomProfileFromState() {
+function buildCustomProfileFromState(overrides = {}) {
   const attributes = Object.fromEntries(Object.entries(state.builderForm).filter(([key]) => key !== "dimensions"));
   const dimensions = Object.fromEntries(
     Object.entries(state.builderForm.dimensions).map(([key, legibility]) => [
@@ -340,8 +340,8 @@ function buildCustomProfileFromState() {
     .slice(0, 3)
     .map(([, value]) => titleCase(value));
   return {
-    ecc_id: `custom_${Date.now()}`,
-    label: labelParts.length ? `Custom: ${labelParts.join(" + ")}` : `Custom Aggregate Profile ${state.customProfiles.length + 1}`,
+    ecc_id: overrides.ecc_id || `custom_${Date.now()}`,
+    label: overrides.label || (labelParts.length ? `Custom: ${labelParts.join(" + ")}` : `Custom Aggregate Profile ${state.customProfiles.length + 1}`),
     population_share: populationShare,
     attributes,
     dimensions,
@@ -352,33 +352,95 @@ function buildCustomProfileFromState() {
     },
     risk_flags: [],
     custom: true,
+    draft: Boolean(overrides.draft),
     promoted: false
   };
 }
 
-function graphEdges(data) {
-  return data.interaction_graph?.edges || [];
+function draftCustomProfile() {
+  if (!reviewerCanBuild() || estimatePopulationShare() < MIN_POPULATION_SHARE) return null;
+  return buildCustomProfileFromState({
+    ecc_id: "custom_draft",
+    label: "Draft Custom Community",
+    draft: true
+  });
 }
 
-function graphConnectivity(data) {
+function graphProfiles(data, includeCustom = false) {
+  const draft = includeCustom ? draftCustomProfile() : null;
+  const customProfiles = includeCustom ? state.customProfiles.filter((profile) => profile.population_share >= MIN_POPULATION_SHARE) : promotedCustomProfiles();
+  const liveProfiles = draft ? [...customProfiles, draft] : customProfiles;
+  return [...data.ecc_profiles, ...liveProfiles];
+}
+
+function dimensionDistance(source, target, dimension) {
+  return Math.abs(dimensionScore(source.dimensions[dimension].legibility) - dimensionScore(target.dimensions[dimension].legibility));
+}
+
+function customInteractionEdge(customProfile, targetProfile) {
+  const dimensions = Object.keys(dimensionLabels);
+  const distances = dimensions.map((dimension) => dimensionDistance(customProfile, targetProfile, dimension));
+  const avgDistance = mean(distances);
+  const sharedLegibility = dimensions.filter((dimension) => customProfile.dimensions[dimension].legibility === targetProfile.dimensions[dimension].legibility).length;
+  const highPressureDimensions = dimensions.filter((dimension) => dimensionDistance(customProfile, targetProfile, dimension) > 0.5);
+  const attributeSpecificity = customProfile.attributes
+    ? Object.values(customProfile.attributes).filter((value) => value !== "aggregate").length / Object.keys(customProfile.attributes).length
+    : 0;
+  const intensity = clamp(0.18 + (1 - avgDistance) * 0.46 + sharedLegibility * 0.035 + customProfile.population_share * 0.35 - attributeSpecificity * 0.08);
+  const character = highPressureDimensions.includes("trust") || highPressureDimensions.includes("dignity") || highPressureDimensions.length >= 3 ? "tension" : "overlap";
+  return {
+    source: customProfile.ecc_id,
+    target: targetProfile.ecc_id,
+    intensity,
+    character,
+    derived: true,
+    dimensions: highPressureDimensions
+  };
+}
+
+function graphEdges(data, includeCustom = false) {
+  const baseEdges = data.interaction_graph?.edges || [];
+  const draft = includeCustom ? draftCustomProfile() : null;
+  const customProfiles = (includeCustom ? state.customProfiles : promotedCustomProfiles()).filter((profile) => profile.population_share >= MIN_POPULATION_SHARE);
+  const activeCustomProfiles = draft ? [...customProfiles, draft] : customProfiles;
+  if (!activeCustomProfiles.length) return baseEdges;
+
+  const baseProfiles = data.ecc_profiles;
+  const derivedEdges = activeCustomProfiles.flatMap((customProfile) => {
+    const strongestPresetEdges = baseProfiles
+      .map((profile) => customInteractionEdge(customProfile, profile))
+      .sort((a, b) => b.intensity - a.intensity)
+      .slice(0, 4);
+    const customPeerEdges = activeCustomProfiles
+      .filter((profile) => profile.ecc_id !== customProfile.ecc_id)
+      .map((profile) => customInteractionEdge(customProfile, profile))
+      .filter((edge) => edge.source < edge.target);
+    return [...strongestPresetEdges, ...customPeerEdges];
+  });
+
+  return [...baseEdges, ...derivedEdges];
+}
+
+function graphConnectivity(data, includeCustom = false) {
+  const profiles = graphProfiles(data, includeCustom);
   const direct = data.interaction_graph?.connectivity_by_ecc;
-  if (direct) {
+  if (direct && !promotedCustomProfiles().length && !includeCustom) {
     return data.ecc_profiles.map((profile) => direct[profile.ecc_id] || 0);
   }
-  const edges = graphEdges(data);
-  return data.ecc_profiles.map((profile) => {
+  const edges = graphEdges(data, includeCustom);
+  return profiles.map((profile) => {
     const profileEdges = edges.filter((edge) => edge.source === profile.ecc_id || edge.target === profile.ecc_id);
     return profileEdges.length ? mean(profileEdges.map((edge) => edge.intensity)) : 0;
   });
 }
 
-function fragmentationRisk(data, values = currentAggregate(data)) {
+function fragmentationRisk(data, values = currentAggregate(data), includeCustom = false) {
   const weights = data.fragmentation_index?.weights || {
     connectivity_gap: 0.4,
     tension: 0.35,
     translation_capacity: 0.25
   };
-  const avgConnectivity = mean(graphConnectivity(data));
+  const avgConnectivity = mean(graphConnectivity(data, includeCustom));
   const value = clamp(
     weights.connectivity_gap * (1 - avgConnectivity) +
       weights.tension * values.tension +
@@ -409,7 +471,7 @@ function arcPath(cx, cy, radius, startAngle, endAngle) {
   return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${radius} ${radius} 0 ${largeArc} 0 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
 }
 
-function nodeLayout(data) {
+function nodeLayout(data, includeCustom = false) {
   const positions = [
     [44, 28],
     [304, 28],
@@ -422,8 +484,7 @@ function nodeLayout(data) {
     [174, 562],
     [434, 562]
   ];
-  return new Map(
-    data.ecc_profiles.map((profile, index) => [
+  const baseNodes = data.ecc_profiles.map((profile, index) => [
       profile.ecc_id,
       {
         ...profile,
@@ -433,8 +494,27 @@ function nodeLayout(data) {
         height: 110,
         color: cohortPalette[profile.ecc_id] || "#9fb0c2"
       }
-    ])
-  );
+    ]);
+  const draft = includeCustom ? draftCustomProfile() : null;
+  const customProfiles = (includeCustom ? state.customProfiles : promotedCustomProfiles()).filter((profile) => profile.population_share >= MIN_POPULATION_SHARE);
+  const customNodes = (draft ? [...customProfiles, draft] : customProfiles)
+    .map((profile, index) => {
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      return [
+        profile.ecc_id,
+        {
+          ...profile,
+          x: 44 + column * 260,
+          y: 756 + row * 156,
+          width: 196,
+          height: 110,
+          color: "#d7f6e9",
+          custom: true
+        }
+      ];
+    });
+  return new Map([...baseNodes, ...customNodes]);
 }
 
 function notablePattern(profile) {
@@ -494,21 +574,35 @@ function updateCategorizationPanel(data, text) {
   if (riskRegister) riskRegister.innerHTML = renderRiskAlerts(data, categorized);
 }
 
-function renderNodeGraph(data) {
-  const nodes = nodeLayout(data);
-  const edges = graphEdges(data);
+function renderNodeGraph(data, options = {}) {
+  const includeCustom = Boolean(options.includeCustom);
+  const nodes = nodeLayout(data, includeCustom);
+  const edges = graphEdges(data, includeCustom);
+  const customCount = [...nodes.values()].filter((node) => node.custom).length;
+  const customRows = customCount ? Math.ceil(customCount / 3) : 0;
+  const graphHeight = customCount ? 746 + customRows * 156 : 704;
   const anchor = (node) => ({
     x: node.x + node.width / 2,
     y: node.y + node.height / 2
   });
   return `
     <div class="node-graph-wrap">
-      <svg class="node-graph" data-hover-node="" viewBox="0 0 804 704" role="img" aria-label="ECC profile interaction graph">
+      <svg class="node-graph ${customCount ? "has-custom-band" : ""}" data-hover-node="" viewBox="0 0 804 ${graphHeight}" style="--graph-h:${graphHeight}px" role="img" aria-label="ECC profile interaction graph">
         <defs>
           <marker id="lineDot" markerWidth="4" markerHeight="4" refX="2" refY="2">
             <circle cx="2" cy="2" r="1.6" fill="#1f2329" />
           </marker>
         </defs>
+        ${
+          customCount
+            ? `
+              <g class="custom-band-marker">
+                <line x1="24" y1="720" x2="780" y2="720" />
+                <text x="44" y="742">Custom Community Builder profiles: derived interactions update from reviewer-defined attributes and ECC dimensions</text>
+              </g>
+            `
+            : ""
+        }
         ${edges
           .map((edge, index) => {
             const source = nodes.get(edge.source);
@@ -516,12 +610,12 @@ function renderNodeGraph(data) {
             if (!source || !target) return "";
             const sourceAnchor = anchor(source);
             const targetAnchor = anchor(target);
-            const color = edge.character === "tension" ? "#1f2329" : "#6f767d";
+            const color = edge.derived ? (edge.character === "tension" ? "#a97016" : "#1a7f8f") : edge.character === "tension" ? "#1f2329" : "#6f767d";
             const width = 0.8 + edge.intensity * 2.2;
             const duration = (4.2 - edge.intensity * 1.7).toFixed(2);
             const midY = (sourceAnchor.y + targetAnchor.y) / 2;
             return `
-              <path class="graph-edge ${edge.character}" d="M ${sourceAnchor.x.toFixed(1)} ${sourceAnchor.y.toFixed(1)} C ${sourceAnchor.x.toFixed(1)} ${midY.toFixed(1)}, ${targetAnchor.x.toFixed(1)} ${midY.toFixed(1)}, ${targetAnchor.x.toFixed(1)} ${targetAnchor.y.toFixed(1)}" stroke="${color}" stroke-width="${width.toFixed(2)}" style="animation-duration:${duration}s; animation-delay:${(index * 0.18).toFixed(2)}s" />
+              <path class="graph-edge ${edge.character} ${edge.derived ? "derived" : ""}" d="M ${sourceAnchor.x.toFixed(1)} ${sourceAnchor.y.toFixed(1)} C ${sourceAnchor.x.toFixed(1)} ${midY.toFixed(1)}, ${targetAnchor.x.toFixed(1)} ${midY.toFixed(1)}, ${targetAnchor.x.toFixed(1)} ${targetAnchor.y.toFixed(1)}" stroke="${color}" stroke-width="${width.toFixed(2)}" style="animation-duration:${duration}s; animation-delay:${(index * 0.18).toFixed(2)}s" />
             `;
           })
           .join("")}
@@ -529,9 +623,9 @@ function renderNodeGraph(data) {
           .map(
             (node, index) => {
               const metrics = node.current_relationships;
-              const cardTitle = node.label.replace("Economically Insecure ", "Econ. Insecure ").replace("Reciprocity-Sensitive ", "Reciprocity ").replace("Marginalized ", "Marg. ");
+              const cardTitle = node.label.replace("Economically Insecure ", "Econ. Insecure ").replace("Reciprocity-Sensitive ", "Reciprocity ").replace("Marginalized ", "Marg. ").replace("Custom: ", "Custom ");
               return `
-              <g class="graph-node" data-node="${node.ecc_id}" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
+              <g class="graph-node ${node.custom ? "custom-graph-node" : ""}" data-node="${node.ecc_id}" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
                 <foreignObject class="system-node" x="${node.x}" y="${node.y}" width="${node.width.toFixed(1)}" height="${node.height.toFixed(1)}">
                   <div xmlns="http://www.w3.org/1999/xhtml" class="system-card" style="--cohort:${node.color}">
                     <div class="system-card-head"><span class="role-mark"></span><strong>${cardTitle}</strong></div>
@@ -559,7 +653,7 @@ function renderNodeGraph(data) {
                     <span>Overlap ${pct(metrics.overlap_score)}</span>
                     <span>Tension ${pct(metrics.tension_score)}</span>
                     <span>Translation ${pct(metrics.translation_capacity)}</span>
-                    <em>Notable pattern: ${notablePattern(node)}</em>
+                    <em>${node.draft ? "Live draft, derived graph edges" : node.custom ? "Stored custom profile, derived graph edges" : "Notable pattern"}: ${notablePattern(node)}</em>
                   </div>
                 </foreignObject>
               `;
@@ -571,13 +665,14 @@ function renderNodeGraph(data) {
         <span>Card color = ECC cohort hue</span>
         <span>Edge weight = interaction strength</span>
         <span>Rose edges = tension-character interaction</span>
+        ${customCount ? `<span>Green/amber derived edges = custom community interactions</span><span>Draft node updates from builder controls</span>` : ""}
       </div>
     </div>
   `;
 }
 
-function renderFragmentationMeter(data, values = currentAggregate(data), compact = false) {
-  const risk = fragmentationRisk(data, values);
+function renderFragmentationMeter(data, values = currentAggregate(data), compact = false, includeCustom = false) {
+  const risk = fragmentationRisk(data, values, includeCustom);
   const angle = risk.value * 180;
   const needle = polarToCartesian(100, 100, 68, angle);
   return `
@@ -1045,6 +1140,17 @@ function renderCommunityBuilder(data) {
               .join("")}
           </div>
           <div class="interaction-report" style="margin-top:18px">${renderInteractionReport(data)}</div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">ECC Interaction Field: Custom Community Layer</h2>
+            <p class="panel-subtitle">Created custom communities appear in the lower band immediately. Derived edges update whenever reviewer-defined ECC dimensions change before creation or new custom profiles are added.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          ${renderNodeGraph(data, { includeCustom: true })}
         </div>
       </div>
       <div class="grid two" style="margin-top:18px">

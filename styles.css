@@ -353,7 +353,7 @@ h1 {
 
 .node-graph {
   width: 100%;
-  height: min(80vw, 720px);
+  height: min(92vw, var(--graph-h, 720px));
   min-height: 620px;
   display: block;
   background:
@@ -375,6 +375,22 @@ h1 {
 .graph-edge.tension {
   stroke-dasharray: 5 10;
   animation-duration: 2.8s, 4.2s;
+}
+
+.graph-edge.derived {
+  opacity: 0.42;
+  stroke-dasharray: 3 8;
+}
+
+.custom-band-marker line {
+  stroke: rgba(31, 35, 41, 0.35);
+  stroke-dasharray: 8 10;
+}
+
+.custom-band-marker text {
+  fill: #4d5358;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .graph-node {
@@ -413,6 +429,21 @@ h1 {
   padding: 0 8px;
   color: #20252b;
   text-transform: uppercase;
+}
+
+.custom-graph-node .system-card {
+  border-style: dashed;
+}
+
+.custom-graph-node .system-card-head {
+  background: #d7f6e9;
+}
+
+.custom-graph-node .system-card-head strong::after {
+  content: " custom";
+  color: #4d5358;
+  font-weight: 500;
+  text-transform: none;
 }
 
 .system-card-head strong {
