@@ -32,7 +32,7 @@ const state = {
       trust: "medium"
     }
   },
-  interactionProfiles: ["ecc_01", "ecc_05"],
+  interactionProfiles: [],
   interactionType: "policy_rollout",
   evidenceStatus: "Use Retrieve historical precedents after selecting profiles and a situation type.",
   tourActive: false,
@@ -517,6 +517,57 @@ function nodeLayout(data, includeCustom = false) {
   return new Map([...baseNodes, ...customNodes]);
 }
 
+function nodeLayoutForProfiles(profiles) {
+  const cardWidth = 196;
+  const cardHeight = 110;
+  const columnGap = 64;
+  const rowGap = 46;
+  const columns = Math.min(3, Math.max(1, profiles.length));
+  const rows = Math.ceil(profiles.length / columns);
+  const totalWidth = columns * cardWidth + (columns - 1) * columnGap;
+  const startX = (804 - totalWidth) / 2;
+  const startY = rows === 1 ? 104 : 54;
+  return new Map(
+    profiles.map((profile, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      return [
+        profile.ecc_id,
+        {
+          ...profile,
+          x: startX + column * (cardWidth + columnGap),
+          y: startY + row * (cardHeight + rowGap),
+          width: cardWidth,
+          height: cardHeight,
+          color: profile.custom ? "#d7f6e9" : cohortPalette[profile.ecc_id] || "#9fb0c2"
+        }
+      ];
+    })
+  );
+}
+
+function interactionGraphEdges(data, profiles) {
+  const ids = new Set(profiles.map((profile) => profile.ecc_id));
+  const presetEdges = (data.interaction_graph?.edges || []).filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+  const seen = new Set(presetEdges.map((edge) => [edge.source, edge.target].sort().join(":")));
+  const derivedEdges = [];
+
+  profiles
+    .filter((profile) => profile.custom)
+    .forEach((customProfile) => {
+      profiles
+        .filter((profile) => profile.ecc_id !== customProfile.ecc_id)
+        .forEach((targetProfile) => {
+          const key = [customProfile.ecc_id, targetProfile.ecc_id].sort().join(":");
+          if (seen.has(key)) return;
+          seen.add(key);
+          derivedEdges.push(customInteractionEdge(customProfile, targetProfile));
+        });
+    });
+
+  return [...presetEdges, ...derivedEdges];
+}
+
 function notablePattern(profile) {
   const low = Object.entries(profile.dimensions)
     .filter(([, detail]) => detail.legibility === "low")
@@ -576,11 +627,13 @@ function updateCategorizationPanel(data, text) {
 
 function renderNodeGraph(data, options = {}) {
   const includeCustom = Boolean(options.includeCustom);
-  const nodes = nodeLayout(data, includeCustom);
-  const edges = graphEdges(data, includeCustom);
+  const scopedProfiles = options.profiles || null;
+  const nodes = scopedProfiles ? nodeLayoutForProfiles(scopedProfiles) : nodeLayout(data, includeCustom);
+  const edges = scopedProfiles ? interactionGraphEdges(data, scopedProfiles) : graphEdges(data, includeCustom);
   const customCount = [...nodes.values()].filter((node) => node.custom).length;
   const customRows = customCount ? Math.ceil(customCount / 3) : 0;
-  const graphHeight = customCount ? 746 + customRows * 156 : 704;
+  const scopedRows = scopedProfiles ? Math.ceil(scopedProfiles.length / Math.min(3, Math.max(1, scopedProfiles.length))) : 0;
+  const graphHeight = scopedProfiles ? Math.max(344, 104 + scopedRows * 156) : customCount ? 746 + customRows * 156 : 704;
   const anchor = (node) => ({
     x: node.x + node.width / 2,
     y: node.y + node.height / 2
@@ -669,6 +722,20 @@ function renderNodeGraph(data, options = {}) {
       </div>
     </div>
   `;
+}
+
+function renderInteractionFieldGraph(data) {
+  const profiles = selectedInteractionProfiles(data);
+  if (!profiles.length) {
+    return `
+      <div class="node-graph-wrap">
+        <div class="node-graph graph-empty-state" role="status" aria-live="polite">
+          <span>add your ECC profile here</span>
+        </div>
+      </div>
+    `;
+  }
+  return renderNodeGraph(data, { profiles });
 }
 
 function renderFragmentationMeter(data, values = currentAggregate(data), compact = false, includeCustom = false) {
@@ -1010,7 +1077,15 @@ function renderSelectedInteractionProfiles(data) {
           (profile) => `
             <span class="selected-profile-pill">
               <strong>${profile.label}</strong>
-              <button data-action="removeInteractionProfile" data-id="${profile.ecc_id}" aria-label="Remove ${profile.label} from situational interaction">Remove</button>
+              <button class="trash-button" data-action="removeInteractionProfile" data-id="${profile.ecc_id}" aria-label="Remove ${profile.label} from situational interaction" title="Remove">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M6 6l1 15h10l1-15" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                </svg>
+              </button>
             </span>
           `
         )
@@ -1169,11 +1244,11 @@ function renderCommunityBuilder(data) {
         <div class="panel-header">
           <div>
             <h2 class="panel-title">ECC Interaction Field: Custom Community Layer</h2>
-            <p class="panel-subtitle">Created custom communities appear in the lower band immediately. Derived edges update whenever reviewer-defined ECC dimensions change before creation or new custom profiles are added.</p>
+            <p class="panel-subtitle">Checked situation profiles appear in this graph. Remove a checkmark or use the profile trash control to take a profile out of the field.</p>
           </div>
         </div>
         <div class="panel-body">
-          ${renderNodeGraph(data, { includeCustom: true })}
+          ${renderInteractionFieldGraph(data)}
         </div>
       </div>
       <div class="grid two" style="margin-top:18px">
