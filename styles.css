@@ -470,6 +470,26 @@ h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.graph-node-remove {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(32, 37, 43, 0.32);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #20252b;
+  padding: 0;
+}
+
+.graph-node-remove:hover {
+  border-color: #8a2740;
+  background: #fff5f7;
+  color: #8a2740;
 }
 
 .role-mark {

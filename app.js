@@ -628,6 +628,7 @@ function updateCategorizationPanel(data, text) {
 function renderNodeGraph(data, options = {}) {
   const includeCustom = Boolean(options.includeCustom);
   const scopedProfiles = options.profiles || null;
+  const removable = Boolean(options.removable);
   const nodes = scopedProfiles ? nodeLayoutForProfiles(scopedProfiles) : nodeLayout(data, includeCustom);
   const edges = scopedProfiles ? interactionGraphEdges(data, scopedProfiles) : graphEdges(data, includeCustom);
   const customCount = [...nodes.values()].filter((node) => node.custom).length;
@@ -681,7 +682,23 @@ function renderNodeGraph(data, options = {}) {
               <g class="graph-node ${node.custom ? "custom-graph-node" : ""}" data-node="${node.ecc_id}" tabindex="0" style="--cohort:${node.color}; animation-delay:${(index * 0.14).toFixed(2)}s">
                 <foreignObject class="system-node" x="${node.x}" y="${node.y}" width="${node.width.toFixed(1)}" height="${node.height.toFixed(1)}">
                   <div xmlns="http://www.w3.org/1999/xhtml" class="system-card" style="--cohort:${node.color}">
-                    <div class="system-card-head"><span class="role-mark"></span><strong>${cardTitle}</strong></div>
+                    <div class="system-card-head">
+                      <span class="role-mark"></span>
+                      <strong>${cardTitle}</strong>
+                      ${
+                        removable
+                          ? `<button class="trash-button graph-node-remove" data-action="removeInteractionProfile" data-id="${node.ecc_id}" aria-label="Remove ${node.label} from graph" title="Remove">
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4h8v2" />
+                                <path d="M6 6l1 15h10l1-15" />
+                                <path d="M10 11v6" />
+                                <path d="M14 11v6" />
+                              </svg>
+                            </button>`
+                          : ""
+                      }
+                    </div>
                     <div class="system-card-body">
                       <span></span><span></span><span></span><span></span><span></span><span></span>
                     </div>
@@ -735,7 +752,7 @@ function renderInteractionFieldGraph(data) {
       </div>
     `;
   }
-  return renderNodeGraph(data, { profiles });
+  return renderNodeGraph(data, { profiles, removable: true });
 }
 
 function renderFragmentationMeter(data, values = currentAggregate(data), compact = false, includeCustom = false) {
