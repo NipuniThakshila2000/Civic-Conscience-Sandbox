@@ -990,9 +990,31 @@ function renderCustomProfileCard(profile) {
           .map(([key, detail]) => `<span class="chip">${dimensionLabels[key]} ${titleCase(detail.legibility)}</span>`)
           .join("")}
       </div>
-      <button class="${promoted ? "secondary-action" : "primary-action"}" data-action="togglePromoteCustom" data-id="${profile.ecc_id}">
-        ${promoted ? "Promoted to main modules" : "Promote to main modules"}
-      </button>
+      <div class="builder-card-actions">
+        <button class="${promoted ? "secondary-action" : "primary-action"}" data-action="togglePromoteCustom" data-id="${profile.ecc_id}">
+          ${promoted ? "Promoted to main modules" : "Promote to main modules"}
+        </button>
+        <button class="danger-action" data-action="removeCustomProfile" data-id="${profile.ecc_id}">Remove custom profile</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSelectedInteractionProfiles(data) {
+  const selected = selectedInteractionProfiles(data);
+  if (!selected.length) return `<div class="notice">No profiles selected for the situational interaction.</div>`;
+  return `
+    <div class="selected-profile-strip">
+      ${selected
+        .map(
+          (profile) => `
+            <span class="selected-profile-pill">
+              <strong>${profile.label}</strong>
+              <button data-action="removeInteractionProfile" data-id="${profile.ecc_id}" aria-label="Remove ${profile.label} from situational interaction">Remove</button>
+            </span>
+          `
+        )
+        .join("")}
     </div>
   `;
 }
@@ -1127,6 +1149,7 @@ function renderCommunityBuilder(data) {
           </label>
         </div>
         <div class="panel-body">
+          ${renderSelectedInteractionProfiles(data)}
           <div class="profile-select-grid">
             ${profiles
               .map(
@@ -1779,6 +1802,29 @@ function wireEvents(data) {
         state.promotedCustomIds.push(id);
         state.builderStatus = "Custom profile promoted to Sandbox, CCC Dashboard, and Scenario Log calculations.";
       }
+      renderShell(data);
+    }
+    if (action === "removeCustomProfile") {
+      const id = target.getAttribute("data-id");
+      const removed = state.customProfiles.find((profile) => profile.ecc_id === id);
+      state.customProfiles = state.customProfiles.filter((profile) => profile.ecc_id !== id);
+      state.promotedCustomIds = state.promotedCustomIds.filter((profileId) => profileId !== id);
+      state.interactionProfiles = state.interactionProfiles.filter((profileId) => profileId !== id);
+      state.profileAudit.unshift({
+        profileId: id,
+        profileLabel: removed?.label || id,
+        creator: state.builderRole,
+        timestamp: new Date().toISOString(),
+        filters: "removed custom profile from builder store and interaction layer"
+      });
+      state.builderStatus = removed ? `${removed.label} removed from custom store and interaction selections.` : "Custom profile removed.";
+      state.evidenceStatus = "Profile selection changed; retrieve historical precedents to refresh citation context.";
+      renderShell(data);
+    }
+    if (action === "removeInteractionProfile") {
+      const id = target.getAttribute("data-id");
+      state.interactionProfiles = state.interactionProfiles.filter((profileId) => profileId !== id);
+      state.evidenceStatus = "Profile removed from situational interaction; retrieve historical precedents to refresh citation context.";
       renderShell(data);
     }
     if (action === "retrieveEvidence") {
