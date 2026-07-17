@@ -1564,6 +1564,11 @@ textarea {
   stroke-linejoin: round;
 }
 
+.graph-node-remove svg,
+.graph-node-remove svg * {
+  pointer-events: none;
+}
+
 .selected-profile-pill .trash-button:hover {
   border-color: #b94a62;
   color: #8a2740;

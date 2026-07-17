@@ -1816,6 +1816,30 @@ function renderShell(data) {
       ${renderTourOverlay()}
     </div>
   `;
+  bindGraphDeleteControls(data);
+}
+
+function removeInteractionProfile(data, id) {
+  state.interactionProfiles = state.interactionProfiles.filter((profileId) => profileId !== id);
+  state.evidenceStatus = "Profile removed from situational interaction; retrieve historical precedents to refresh citation context.";
+  renderShell(data);
+}
+
+function bindGraphDeleteControls(data) {
+  app.querySelectorAll(".graph-node-remove").forEach((button) => {
+    let handled = false;
+    const remove = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (handled) return;
+      handled = true;
+      removeInteractionProfile(data, button.getAttribute("data-id"));
+    };
+
+    button.addEventListener("click", remove);
+    button.addEventListener("pointerup", remove);
+    button.addEventListener("touchend", remove, { passive: false });
+  });
 }
 
 function wireEvents(data) {
@@ -1961,10 +1985,7 @@ function wireEvents(data) {
       renderShell(data);
     }
     if (action === "removeInteractionProfile") {
-      const id = target.getAttribute("data-id");
-      state.interactionProfiles = state.interactionProfiles.filter((profileId) => profileId !== id);
-      state.evidenceStatus = "Profile removed from situational interaction; retrieve historical precedents to refresh citation context.";
-      renderShell(data);
+      removeInteractionProfile(data, target.getAttribute("data-id"));
     }
     if (action === "retrieveEvidence") {
       const matches = evidenceMatches(data);
