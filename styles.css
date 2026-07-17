@@ -839,6 +839,156 @@ h1 {
   background: linear-gradient(90deg, var(--gold), var(--rose));
 }
 
+.article-metrics-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(158, 241, 205, 0.18), transparent 46%),
+    #fff;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.article-metrics-title {
+  background:
+    linear-gradient(90deg, rgba(158, 241, 205, 0.2), transparent 64%),
+    var(--ink);
+  color: #fff;
+  font-family: var(--body-font);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 14px 18px;
+}
+
+.article-metrics-body {
+  padding: 18px;
+}
+
+.article-metrics-label {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.altmetric-row {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.altmetric-mark {
+  width: 66px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, #fff 0 26%, transparent 27%),
+    conic-gradient(
+      var(--teal) 0 18%,
+      var(--cyan) 18% 34%,
+      var(--steel) 34% 49%,
+      var(--rose) 49% 62%,
+      var(--amber) 62% 76%,
+      var(--violet) 76% 89%,
+      var(--ink) 89% 100%
+    );
+  box-shadow: inset 0 0 0 9px rgba(255, 255, 255, 0.34);
+}
+
+.altmetric-mark span {
+  color: #1f2a35;
+  font-size: 12px;
+  font-weight: 800;
+  position: relative;
+}
+
+.source-list {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.source-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.source-row i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  background: var(--source);
+}
+
+.citation-strip {
+  border-top: 1px solid var(--line);
+  background: rgba(245, 247, 250, 0.68);
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+}
+
+.citation-badge {
+  width: 58px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, #fff 0 52%, transparent 53%),
+    conic-gradient(var(--teal), var(--amber), var(--rose), var(--steel), var(--teal));
+  box-shadow: 0 4px 12px rgba(16, 47, 78, 0.14);
+}
+
+.citation-badge span {
+  color: #1f2a35;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.citation-stats {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.citation-stats div {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  color: #1d2732;
+  font-size: 13px;
+}
+
+.citation-stats strong {
+  font-weight: 800;
+}
+
+.citation-stats span {
+  min-width: 0;
+}
+
+.citation-stats hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+
 .section-heading {
   margin: 0 0 14px;
   font-size: 16px;
@@ -1720,6 +1870,7 @@ textarea {
     transform: rotate(90deg);
     min-height: 22px;
   }
+
 }
 
 /* Full-site technical system theme */
@@ -1817,6 +1968,7 @@ textarea {
 }
 
 .panel,
+.article-metrics-card,
 .metric,
 .dim-box,
 .profile-button,

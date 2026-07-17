@@ -872,6 +872,52 @@ function renderRelationshipBars(values) {
   `;
 }
 
+function renderArticleMetrics(aggregate, gap, interventionGap) {
+  const civicSignal = clamp((aggregate.overlap + aggregate.translation + (1 - aggregate.tension)) / 3);
+  const reviewCount = Math.max(1, Math.round(civicSignal * 18));
+  const activeSignals = Math.max(0, Math.round((1 - Math.max(0, gap.translation)) * 9));
+  const cohesionRatio = (1 + aggregate.translation * 8.8).toFixed(2);
+  const readinessRatio = (0.8 + (1 - Math.max(0, gap.overlap)) * 1.45).toFixed(2);
+  const signalScore = Math.round(civicSignal * 100 + aggregate.tension * 18);
+  const sources = [
+    ["Shared language", Math.round(aggregate.overlap * 12), "var(--teal)"],
+    ["Translation capacity", Math.round(aggregate.translation * 9), "var(--cyan)"],
+    ["Process alignment", Math.round((1 - Math.max(0, gap.overlap)) * 6), "var(--steel)"],
+    ["Tension flags", Math.round(aggregate.tension * 18), "var(--rose)"],
+    ["Civic forums", Math.round((1 - Math.max(0, gap.translation)) * 10), "var(--amber)"],
+    ["Working notes", Math.round((1 - aggregate.tension) * 8), "var(--violet)"],
+    ["Review memos", Math.max(1, Math.round((1 - Math.max(0, interventionGap.translation)) * 6)), "var(--gold)"],
+    ["Scenario log", Math.max(1, Math.round((1 - Math.max(0, interventionGap.overlap)) * 10)), "var(--ink)"]
+  ];
+
+  return `
+    <div class="article-metrics-card" aria-label="CCC signal metrics">
+      <div class="article-metrics-title">CCC Signal Metrics</div>
+      <div class="article-metrics-body">
+        <div class="article-metrics-label">Civic signal mix</div>
+        <div class="altmetric-row">
+          <div class="altmetric-mark" aria-label="Civic signal score ${signalScore}">
+            <span>${signalScore}</span>
+          </div>
+          <div class="source-list">
+            ${sources.map(([label, value, color]) => `<div class="source-row"><i style="--source:${color}"></i><span>${label} (${value})</span></div>`).join("")}
+          </div>
+        </div>
+      </div>
+      <div class="citation-strip">
+        <div class="citation-badge"><span>${reviewCount}</span></div>
+        <div class="citation-stats">
+          <div><strong>${reviewCount}</strong><span>Reviewed signals</span></div>
+          <div><strong>${activeSignals}</strong><span>Active watch signals</span></div>
+          <hr />
+          <div><strong>${cohesionRatio}</strong><span>Cohesion ratio</span></div>
+          <div><strong>${readinessRatio}</strong><span>Readiness ratio</span></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderOverview(data) {
   const aggregate = currentAggregate(data);
   const gap = idealGap(data, aggregate);
@@ -1628,6 +1674,7 @@ function renderDashboard(data) {
             </div>
           </div>
         </div>
+        ${renderArticleMetrics(aggregate, gap, interventionGap)}
       </div>
       <div class="panel" style="margin-top:18px">
         <div class="panel-header">
