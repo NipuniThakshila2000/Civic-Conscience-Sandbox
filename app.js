@@ -552,18 +552,14 @@ function interactionGraphEdges(data, profiles) {
   const seen = new Set(presetEdges.map((edge) => [edge.source, edge.target].sort().join(":")));
   const derivedEdges = [];
 
-  profiles
-    .filter((profile) => profile.custom)
-    .forEach((customProfile) => {
-      profiles
-        .filter((profile) => profile.ecc_id !== customProfile.ecc_id)
-        .forEach((targetProfile) => {
-          const key = [customProfile.ecc_id, targetProfile.ecc_id].sort().join(":");
-          if (seen.has(key)) return;
-          seen.add(key);
-          derivedEdges.push(customInteractionEdge(customProfile, targetProfile));
-        });
+  profiles.forEach((sourceProfile, sourceIndex) => {
+    profiles.slice(sourceIndex + 1).forEach((targetProfile) => {
+      const key = [sourceProfile.ecc_id, targetProfile.ecc_id].sort().join(":");
+      if (seen.has(key)) return;
+      seen.add(key);
+      derivedEdges.push(customInteractionEdge(sourceProfile, targetProfile));
     });
+  });
 
   return [...presetEdges, ...derivedEdges];
 }
@@ -874,44 +870,53 @@ function renderRelationshipBars(values) {
 
 function renderArticleMetrics(aggregate, gap, interventionGap) {
   const civicSignal = clamp((aggregate.overlap + aggregate.translation + (1 - aggregate.tension)) / 3);
-  const reviewCount = Math.max(1, Math.round(civicSignal * 18));
-  const activeSignals = Math.max(0, Math.round((1 - Math.max(0, gap.translation)) * 9));
-  const cohesionRatio = (1 + aggregate.translation * 8.8).toFixed(2);
-  const readinessRatio = (0.8 + (1 - Math.max(0, gap.overlap)) * 1.45).toFixed(2);
-  const signalScore = Math.round(civicSignal * 100 + aggregate.tension * 18);
+  const totalCitations = Math.max(1, Math.round(civicSignal * 18));
+  const recentCitations = Math.max(0, Math.round((1 - Math.max(0, gap.translation)) * 9));
+  const fieldRatio = (1 + aggregate.translation * 8.8).toFixed(2);
+  const relativeRatio = (0.8 + (1 - Math.max(0, gap.overlap)) * 1.45).toFixed(2);
+  const attentionScore = Math.round(civicSignal * 100 + aggregate.tension * 18);
   const sources = [
-    ["Shared language", Math.round(aggregate.overlap * 12), "var(--teal)"],
-    ["Translation capacity", Math.round(aggregate.translation * 9), "var(--cyan)"],
-    ["Process alignment", Math.round((1 - Math.max(0, gap.overlap)) * 6), "var(--steel)"],
-    ["Tension flags", Math.round(aggregate.tension * 18), "var(--rose)"],
-    ["Civic forums", Math.round((1 - Math.max(0, gap.translation)) * 10), "var(--amber)"],
-    ["Working notes", Math.round((1 - aggregate.tension) * 8), "var(--violet)"],
-    ["Review memos", Math.max(1, Math.round((1 - Math.max(0, interventionGap.translation)) * 6)), "var(--gold)"],
-    ["Scenario log", Math.max(1, Math.round((1 - Math.max(0, interventionGap.overlap)) * 10)), "var(--ink)"]
+    ["News", Math.round(aggregate.overlap * 12), "Public coverage", "Civic alignment", "var(--rose)"],
+    ["Blogs", Math.round((1 - Math.max(0, gap.overlap)) * 7), "Commentary", "Policy interpretation", "var(--amber)"],
+    ["Policy documents", Math.max(1, Math.round(aggregate.translation * 5)), "Institutional", "Process and trust", "var(--violet)"],
+    ["X / social posts", Math.round(aggregate.tension * 18), "Social media", "Tension signals", "var(--cyan)"],
+    ["Facebook groups", Math.round((1 - Math.max(0, gap.translation)) * 8), "Community media", "Local response", "var(--steel)"],
+    ["Wikipedia references", Math.max(1, Math.round((1 - aggregate.tension) * 3)), "Reference", "Background context", "var(--teal)"],
+    ["Reddit threads", Math.round((aggregate.tension + gap.translation) * 5), "Forum discussion", "Public questions", "var(--gold)"],
+    ["Mendeley readers", Math.max(1, Math.round((1 - Math.max(0, interventionGap.overlap)) * 10)), "Research library", "Evidence review", "var(--ink)"]
   ];
 
   return `
-    <div class="article-metrics-card" aria-label="CCC signal metrics">
-      <div class="article-metrics-title">CCC Signal Metrics</div>
+    <div class="article-metrics-card" aria-label="Article metrics">
+      <div class="article-metrics-title">Article Metrics</div>
       <div class="article-metrics-body">
-        <div class="article-metrics-label">Civic signal mix</div>
+        <div class="article-metrics-label">Altmetric news-source mix</div>
         <div class="altmetric-row">
-          <div class="altmetric-mark" aria-label="Civic signal score ${signalScore}">
-            <span>${signalScore}</span>
+          <div class="altmetric-mark" aria-label="Attention score ${attentionScore}">
+            <span>${attentionScore}</span>
           </div>
           <div class="source-list">
-            ${sources.map(([label, value, color]) => `<div class="source-row"><i style="--source:${color}"></i><span>${label} (${value})</span></div>`).join("")}
+            ${sources
+              .map(
+                ([label, value, medium, topic, color]) => `
+                  <div class="source-row source-row-detail">
+                    <i style="--source:${color}"></i>
+                    <span><strong>${label} (${value})</strong><em>${medium} | ${topic}</em></span>
+                  </div>
+                `
+              )
+              .join("")}
           </div>
         </div>
       </div>
       <div class="citation-strip">
-        <div class="citation-badge"><span>${reviewCount}</span></div>
+        <div class="citation-badge"><span>${totalCitations}</span></div>
         <div class="citation-stats">
-          <div><strong>${reviewCount}</strong><span>Reviewed signals</span></div>
-          <div><strong>${activeSignals}</strong><span>Active watch signals</span></div>
+          <div><strong>${totalCitations}</strong><span>Total citations</span></div>
+          <div><strong>${recentCitations}</strong><span>Recent citations</span></div>
           <hr />
-          <div><strong>${cohesionRatio}</strong><span>Cohesion ratio</span></div>
-          <div><strong>${readinessRatio}</strong><span>Readiness ratio</span></div>
+          <div><strong>${fieldRatio}</strong><span>Field Citation Ratio</span></div>
+          <div><strong>${relativeRatio}</strong><span>Relative Citation Ratio</span></div>
         </div>
       </div>
     </div>
