@@ -2305,6 +2305,24 @@ body {
     --graph-h: 560px;
   }
 
+  .node-graph .graph-edge {
+    animation: lineFlow 4.8s linear infinite;
+    filter: drop-shadow(0 1px 3px rgba(31, 35, 41, 0.22));
+    opacity: 0.72 !important;
+    stroke-width: 2.4px !important;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .node-graph .graph-edge.tension {
+    opacity: 0.82 !important;
+    stroke-width: 2.8px !important;
+  }
+
+  .node-graph .graph-edge.derived {
+    opacity: 0.9 !important;
+    stroke-width: 2.6px !important;
+  }
+
   .node-graph .role-mark {
     display: none;
   }
