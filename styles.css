@@ -2310,27 +2310,38 @@ body {
   }
 
   .node-graph .system-card-head {
-    justify-content: space-between;
+    justify-content: center;
+    padding-right: 40px;
+    position: relative;
   }
 
   .node-graph .system-card-head strong {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    max-width: 100%;
   }
 
   .node-graph .graph-node-remove {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
     padding: 0;
     pointer-events: auto;
-    position: relative;
     touch-action: manipulation;
     z-index: 2;
   }
 
+  .node-graph .graph-node-remove::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
   .node-graph .graph-node-remove svg {
-    width: 17px;
-    height: 17px;
+    width: 16px;
+    height: 16px;
   }
 
   .panel-header,
