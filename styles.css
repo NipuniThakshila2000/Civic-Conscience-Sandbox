@@ -2191,3 +2191,251 @@ textarea {
   font-family: var(--body-font);
   font-weight: 400;
 }
+
+/* Final responsive overrides: keep these after the technical theme layer. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1040px) {
+  .overview-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar-inner,
+  .nav,
+  .main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .topbar-inner {
+    padding-top: 18px;
+    padding-bottom: 16px;
+  }
+
+  .title-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 14px;
+  }
+
+  h1 {
+    font-size: clamp(34px, 11vw, 48px);
+    line-height: 0.98;
+  }
+
+  .lede {
+    font-size: 14px;
+    line-height: 1.48;
+  }
+
+  .status-pill {
+    justify-self: start;
+    max-width: 100%;
+  }
+
+  .nav {
+    gap: 8px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    scroll-padding-left: 14px;
+  }
+
+  .nav button {
+    flex: 0 0 auto;
+    padding: 9px 10px;
+    font-size: 10px;
+  }
+
+  .tour-start {
+    margin-left: 0;
+  }
+
+  .main {
+    padding-top: 18px;
+    padding-bottom: 32px;
+  }
+
+  .grid.two,
+  .grid.three,
+  .overview-hero-grid,
+  .scenario-card,
+  .profile-detail,
+  .builder-view > .grid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-hero {
+    padding: 22px 14px;
+  }
+
+  .hero-copy h2 {
+    font-size: clamp(30px, 10vw, 42px);
+    line-height: 1;
+  }
+
+  .hero-copy p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .graph-panel,
+  .risk-panel {
+    padding: 14px;
+  }
+
+  .graph-panel h3,
+  .risk-panel h3 {
+    font-size: 19px;
+  }
+
+  .node-graph {
+    height: min(112vw, 560px);
+    min-height: 420px;
+    --graph-h: 560px;
+  }
+
+  .panel-header,
+  .panel-body {
+    padding: 14px;
+  }
+
+  .panel-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .metric-grid,
+  .dimension-matrix,
+  .builder-form,
+  .dimension-form,
+  .profile-select-grid,
+  .strain-grid,
+  .prompt-bank {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-value {
+    font-size: 30px;
+  }
+
+  .article-metrics-card {
+    min-width: 0;
+  }
+
+  .altmetric-row,
+  .citation-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .altmetric-mark,
+  .citation-badge {
+    margin: 0 auto;
+  }
+
+  .citation-stats div {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .selector-row,
+  .tour-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selector-row > *,
+  .tour-controls > *,
+  .primary-action,
+  .secondary-action {
+    width: 100%;
+  }
+
+  select,
+  .role-picker {
+    min-width: 0;
+    width: 100%;
+  }
+
+  textarea {
+    min-height: 170px;
+  }
+
+  .sandbox-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .sandbox-step {
+    min-height: auto;
+  }
+
+  .sandbox-step-arrow {
+    min-height: 22px;
+    transform: rotate(90deg);
+  }
+
+  .bar-row {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .table-wrap {
+    margin-left: -2px;
+    margin-right: -2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 720px;
+  }
+
+  .selected-profile-pill {
+    width: 100%;
+    justify-content: space-between;
+    white-space: normal;
+  }
+
+  .tour-card {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar-inner,
+  .nav,
+  .main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  h1 {
+    font-size: clamp(31px, 12vw, 40px);
+  }
+
+  .agency-line {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .node-graph {
+    height: 480px;
+    min-height: 390px;
+  }
+
+  .source-row {
+    font-size: 12px;
+  }
+
+  table {
+    min-width: 660px;
+  }
+}
