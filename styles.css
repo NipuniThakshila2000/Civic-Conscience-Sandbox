@@ -1564,6 +1564,11 @@ textarea {
   stroke-linejoin: round;
 }
 
+.trash-button svg,
+.trash-button svg * {
+  pointer-events: none;
+}
+
 .selected-profile-pill .trash-button:hover {
   border-color: #b94a62;
   color: #8a2740;
@@ -2302,6 +2307,30 @@ body {
 
   .node-graph .role-mark {
     display: none;
+  }
+
+  .node-graph .system-card-head {
+    justify-content: space-between;
+  }
+
+  .node-graph .system-card-head strong {
+    flex: 1 1 auto;
+  }
+
+  .node-graph .graph-node-remove {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    pointer-events: auto;
+    position: relative;
+    touch-action: manipulation;
+    z-index: 2;
+  }
+
+  .node-graph .graph-node-remove svg {
+    width: 17px;
+    height: 17px;
   }
 
   .panel-header,
